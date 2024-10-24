@@ -1,0 +1,10 @@
+name: eSync
+main: com.aiyostudio.esync.internal.plugin.EfficientSync
+depend:
+  - AyCore
+version: @version@
+commands:
+  esync:
+    aliases:
+      - syncdata
+    description: Command for eSync.
