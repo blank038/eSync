@@ -8,3 +8,4 @@ plugins {
 }
 rootProject.name = "eSync"
 
+include("common", "bukkit", ":nms:v1_12_R1")
