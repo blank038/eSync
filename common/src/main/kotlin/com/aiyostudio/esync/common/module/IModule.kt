@@ -7,13 +7,37 @@ interface IModule<out T : IEntity> {
 
     fun init()
 
+    /**
+     * Execute before attemptLoad.
+     */
+    fun preLoad(uuid: UUID)
+
+    /**
+     * Called when no player data is present.
+     */
+    fun firstLoad(uuid: UUID, bytea: ByteArray?): Boolean
+
+    /**
+     * Preload data and load into cache.
+     */
     fun attemptLoad(uuid: UUID, bytea: ByteArray?): Boolean
+
+    /**
+     * Apply after data loading is complete.
+     */
+    fun apply(uuid: UUID)
 
     fun find(uuid: UUID): T?
 
     fun toByteArray(uuid: UUID): ByteArray?
 
+    /**
+     * When player cache data is unloaded.
+     */
     fun unloadCache(uuid: UUID)
 
+    /**
+     * Module unloading.
+     */
     fun unload()
 }

@@ -2,24 +2,29 @@ package com.aiyostudio.esync.internal.config
 
 import com.aiyostudio.esync.common.repository.impl.MysqlRepositoryImpl
 import com.aiyostudio.esync.internal.api.event.InitModulesEvent
+import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.handler.RepositoryHandler
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.util.LoggerUtil
 import com.aiyostudio.supermarketpremium.internal.config.i18n.I18n
 import org.bukkit.Bukkit
+import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
 
 object SyncConfig {
-    private val dependModules = mutableListOf<String>()
+    var behaviorLock: ConfigurationSection? = null
+    var autoUnlock: ConfigurationSection? = null
 
     fun init() {
         val plugin = EfficientSyncBukkit.instance
         plugin.saveDefaultConfig()
         plugin.reloadConfig()
         val config = plugin.config
-        dependModules.clear()
-        dependModules.addAll(config.getStringList("depends"))
+        CacheHandler.dependModules.clear()
+        CacheHandler.dependModules.addAll(config.getStringList("depends").toSet())
+        this.behaviorLock = config.getConfigurationSection("sync.behavior-lock")
+        this.autoUnlock = config.getConfigurationSection("sync.auto-unlock")
         // initialize i18n
         I18n(config.getString("language"))
         // register modules
@@ -57,5 +62,7 @@ object SyncConfig {
             )
             else -> throw NullPointerException("Failed to initialize repository.")
         }
+
+        LoggerUtil.print("&6 * &fSync source: &e${RepositoryHandler.repository?.id ?: "NONE"}")
     }
 }

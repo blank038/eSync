@@ -19,6 +19,20 @@ sync:
       url: "jdbc:postgresql://localhost:5432/postgres"
       user: "postgres"
       password: "postgres"
+  # 自动解锁
+  # Automatic unlock
+  auto-unlock:
+    enable: true
+    # 秒 / seconds
+    delay: 20
+  # 行为锁
+  # Behavior lock.
+  behavior-lock:
+    move: true
+    chat: true
+    drop: true
+    inv-click: true
+    interact: true
 
 # 启动模块
 # Enable modules
@@ -27,10 +41,8 @@ modules:
   # Player Inventory
   inventory:
     enable: true
-    # 没有数据时时否清空玩家背包
-    # Clear player's inventory if there is no data.
-    first-clear: false
-    # Clear inventory every time.
+    # 每次登录都清空玩家背包
+    # Clear inventory every time
     always-clear: true
   # 玩家状态, 含有: 血量、Buff
   # Player status, including: health, buffs

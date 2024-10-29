@@ -4,6 +4,7 @@ import com.aiyostudio.esync.common.enums.SyncState
 import java.util.UUID
 
 interface IRepository {
+    val id: String
 
     fun isExists(uuid: UUID, module: String): Boolean
 
