@@ -7,10 +7,12 @@ import org.bukkit.inventory.ItemStack
 class EnderChestEntity : IEntity {
     val items = mutableMapOf<Int, ItemStack>()
 
-    override fun apply(player: Any) {
+    override fun apply(player: Any): Boolean {
         if (player is Player) {
             player.enderChest.clear()
-            items.forEach { slot, item -> player.enderChest.setItem(slot, item) }
+            items.forEach { (slot, item) -> player.enderChest.setItem(slot, item) }
+            return true
         }
+        return false
     }
 }

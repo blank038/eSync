@@ -66,7 +66,6 @@ class SyncTransaction(
             repository.updateState(uuid, it, SyncState.LOCKED)
             val module = ModuleHandler.findByKey(it)!!
             module.apply(player.uniqueId)
-            CacheHandler.playerCaches[uuid]!!.load(it)
         }
     }
 }

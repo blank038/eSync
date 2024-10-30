@@ -36,9 +36,9 @@ class InventoryModuleImpl(
         }
     }
 
-    override fun apply(uuid: UUID) {
+    override fun apply(uuid: UUID): Boolean {
         val player = Bukkit.getPlayer(uuid)
-        this.find(uuid)?.apply(player)
+        return this.find(uuid)?.apply(player) ?: false
     }
 
     override fun toByteArray(uuid: UUID): ByteArray? {
@@ -67,7 +67,8 @@ class InventoryModuleImpl(
         for (i in 0 until count) {
             val slot = byteBuf.readInt()
             val length = byteBuf.readInt()
-            val bytes = byteBuf.readBytes(length).array()
+            val bytes = ByteArray(length)
+            byteBuf.readBytes(length)
             val item = SerializerUtil.deserializerItem(bytes)
             entity.inventory[slot] = item
         }

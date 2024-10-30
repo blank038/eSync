@@ -36,9 +36,9 @@ class PlayerStatusModuleImpl(
         }
     }
 
-    override fun apply(uuid: UUID) {
+    override fun apply(uuid: UUID): Boolean {
         val player = Bukkit.getPlayer(uuid)
-        this.find(uuid)?.apply(player)
+        return this.find(uuid)?.apply(player) ?: false
     }
 
     override fun toByteArray(uuid: UUID): ByteArray? {
@@ -69,7 +69,8 @@ class PlayerStatusModuleImpl(
         val size = buf.readInt()
         for (i in 0 until size) {
             val length = buf.readInt()
-            val byteArray = buf.readBytes(length).array()
+            val byteArray = ByteArray(length)
+            buf.readBytes(byteArray)
             val str = String(byteArray, Charsets.UTF_8)
             val yaml = YamlConfiguration()
             yaml.loadFromString(str)

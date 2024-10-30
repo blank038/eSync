@@ -25,7 +25,7 @@ interface IModule<out T : IEntity> {
     /**
      * Apply after data loading is complete.
      */
-    fun apply(uuid: UUID)
+    fun apply(uuid: UUID): Boolean
 
     fun find(uuid: UUID): T?
 
