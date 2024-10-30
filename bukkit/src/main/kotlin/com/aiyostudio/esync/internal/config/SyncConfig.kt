@@ -6,6 +6,7 @@ import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.handler.RepositoryHandler
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
+import com.aiyostudio.esync.internal.repository.MysqlVariantRepositoryImpl
 import com.aiyostudio.esync.internal.util.LoggerUtil
 import com.aiyostudio.supermarketpremium.internal.config.i18n.I18n
 import org.bukkit.Bukkit
@@ -60,8 +61,14 @@ object SyncConfig {
                 sourceConfig.getString("user"),
                 sourceConfig.getString("password")
             )
+            "mysql-variant" -> MysqlVariantRepositoryImpl(
+                sourceConfig.getString("url"),
+                sourceConfig.getString("user"),
+                sourceConfig.getString("password")
+            )
             else -> throw NullPointerException("Failed to initialize repository.")
         }
+        RepositoryHandler.repository?.run { this.init() }
 
         LoggerUtil.print("&6 * &fSync source: &e${RepositoryHandler.repository?.id ?: "NONE"}")
     }

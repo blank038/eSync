@@ -10,13 +10,37 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
-class MysqlRepositoryImpl(
+open class MysqlRepositoryImpl(
     private val url: String,
     private val user: String,
     private val password: String
 ) : IRepository {
-    private val esyncDataTable = "`esync_data`"
+    protected val esyncDataTable = "`esync_data`"
+    protected val sql = arrayOf(
+        """
+        CREATE TABLE IF NOT EXISTS $esyncDataTable
+        (
+            `id`         BIGINT AUTO_INCREMENT NOT NULL,
+            `owner_uuid` VARCHAR(40)           NOT NULL,
+            `module`     VARCHAR(100)          NOT NULL,
+            `data`       MEDIUMBLOB            NOT NULL,
+            `state`      ENUM ('COMPLETE', 'WAITING', 'LOCKED'),
+            PRIMARY KEY (`id`),
+            INDEX idx_owner (owner_uuid),
+            INDEX idx_state (state),
+            INDEX idx_module (module)
+        ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+        """.trimIndent()
+    )
     override val id = "MySQL"
+
+    override fun init() {
+        sql.forEach { line ->
+            this.connect {
+                it.use { conn -> conn.prepareStatement(line).executeUpdate() }
+            }
+        }
+    }
 
     override fun isExists(uuid: UUID, module: String): Boolean {
         val result = AtomicBoolean(false)
@@ -33,12 +57,12 @@ class MysqlRepositoryImpl(
 
     override fun queryData(uuid: UUID, module: String): ByteArray? {
         val result = AtomicReference<ByteArray>()
-        this.connect{ conn ->
+        this.connect { conn ->
             val sql = "SELECT data FROM $esyncDataTable WHERE owner_uuid = ? AND module = ?"
             conn.prepareStatement(sql).use { statement ->
                 statement.setString(1, uuid.toString())
                 statement.setString(2, module)
-                statement.executeQuery().use rsUse@ { rs ->
+                statement.executeQuery().use rsUse@{ rs ->
                     if (!rs.next()) {
                         return@rsUse
                     }
@@ -120,7 +144,7 @@ class MysqlRepositoryImpl(
     }
 
     private fun connectTransaction(uuid: UUID, module: String, block: (connect: Connection, id: Int) -> Unit) {
-        with(DriverManager.getConnection(url, user, password)) {
+        with(this.getConnection()) {
             this.autoCommit = false
             try {
                 this.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
@@ -146,12 +170,16 @@ class MysqlRepositoryImpl(
     }
 
     private fun connect(block: (connect: Connection) -> Unit) {
-        with(DriverManager.getConnection(url, user, password)) {
+        with(this.getConnection()) {
             try {
                 block(this)
             } finally {
                 this.close()
             }
         }
+    }
+
+    open fun getConnection(): Connection {
+        return DriverManager.getConnection(url, user, password)
     }
 }

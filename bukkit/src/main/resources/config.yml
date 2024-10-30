@@ -3,9 +3,13 @@ language: "zh_CN"
 # 同步设置
 # Sync settings
 sync:
-  # 当前类型, 支持: MySQL, PostgreSQL
-  # Current type, Supports: MySQL, PostgreSQL
-  type: mysql
+  # 当前类型, 支持: MySQL(type: mysql), PostgreSQL(type: postgres)
+  # 变种:
+  # - MySQLVariant(type: mysql_variant,使用 AyCore 内置简易连接池或 HikariCP)
+  # Current type, Supports: MySQL(id: mysql), PostgreSQL(id: postgres)
+  # Variant:
+  # - MySQLVariant(type: mysql-variant, from AyCore, Support HikariCP or built-in simpel pool)
+  type: mysql-variant
   # 源参数设置
   # Source parameters
   sources:
@@ -19,6 +23,11 @@ sync:
       url: "jdbc:postgresql://localhost:5432/postgres"
       user: "postgres"
       password: "postgres"
+    # mysql_variant
+    mysql-variant:
+      url: "jdbc:mysql://localhost/minecraft?useSSL=false&autoReconnect=true&autoReconnectForPools=true&useUnicode=true&characterEncoding=utf-8"
+      user: "root"
+      password: "root"
   # 自动解锁
   # Automatic unlock
   auto-unlock:
@@ -54,14 +63,14 @@ modules:
   # Player status, including: health, buffs
   player-status:
     enable: true
-    # 每次登录都清空玩家背包
+    # 每次登录都清空玩家药水效果
     # Clear potion every time
     always-clear: true
   # 末影箱
   # Ender chest
   ender-chest:
     enable: true
-    # 每次登录都清空玩家背包
+    # 每次登录都清空玩家末影箱
     # Clear ender-chest every time
     always-clear: true
 

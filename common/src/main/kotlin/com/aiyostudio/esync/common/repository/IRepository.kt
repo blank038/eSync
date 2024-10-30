@@ -6,6 +6,8 @@ import java.util.UUID
 interface IRepository {
     val id: String
 
+    fun init()
+
     fun isExists(uuid: UUID, module: String): Boolean
 
     fun queryData(uuid: UUID, module: String): ByteArray?
