@@ -30,9 +30,15 @@ sync:
   behavior-lock:
     move: true
     chat: true
+    command:
+      lock: true
+      bypass-commands:
+        - "/login"
+        - "/register"
     drop: true
     inv-click: true
     interact: true
+    pickup: true
 
 # 启动模块
 # Enable modules

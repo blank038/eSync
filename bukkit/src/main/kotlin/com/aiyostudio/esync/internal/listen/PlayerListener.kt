@@ -10,10 +10,13 @@ import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.transaction.SyncTransaction
 import com.aiyostudio.supermarketpremium.internal.config.i18n.I18n
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.AsyncPlayerChatEvent
+import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -25,7 +28,7 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onMove(event: PlayerMoveEvent) {
-        val isMoveLocked =SyncConfig.behaviorLock?.getBoolean("move", true) ?: true
+        val isMoveLocked = SyncConfig.behaviorLock?.getBoolean("move", true) ?: true
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
         if (isMoveLocked && isPlayerNotLoaded) {
             event.isCancelled = true
@@ -35,7 +38,7 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onChat(event: AsyncPlayerChatEvent) {
-        val isChatLocked =SyncConfig.behaviorLock?.getBoolean("locked", true) ?: true
+        val isChatLocked = SyncConfig.behaviorLock?.getBoolean("locked", true) ?: true
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
         if (isChatLocked && isPlayerNotLoaded) {
             event.isCancelled = true
@@ -44,7 +47,7 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-        val isInvClickLocked =SyncConfig.behaviorLock?.getBoolean("inv-click", true) ?: true
+        val isInvClickLocked = SyncConfig.behaviorLock?.getBoolean("inv-click", true) ?: true
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.whoClicked.uniqueId]?.dependLoaded == false
         if (isInvClickLocked && isPlayerNotLoaded) {
             event.isCancelled = true
@@ -53,7 +56,7 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onDrop(event: PlayerDropItemEvent) {
-        val isDropLocked =SyncConfig.behaviorLock?.getBoolean("drop", true) ?: true
+        val isDropLocked = SyncConfig.behaviorLock?.getBoolean("drop", true) ?: true
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
         if (isDropLocked && isPlayerNotLoaded) {
             event.isCancelled = true
@@ -62,9 +65,36 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onInteract(event: PlayerInteractEvent) {
-        val isInteractLocked =SyncConfig.behaviorLock?.getBoolean("interact", true) ?: true
+        val isInteractLocked = SyncConfig.behaviorLock?.getBoolean("interact", true) ?: true
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
         if (isInteractLocked && isPlayerNotLoaded) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPickupItem(event: EntityPickupItemEvent) {
+        if (event.entity is Player) {
+            val isPickupLocked = SyncConfig.behaviorLock?.getBoolean("pickup", true) ?: true
+            val isPlayerNotLoaded = CacheHandler.playerCaches[event.entity.uniqueId]?.dependLoaded == false
+            if (isPickupLocked && isPlayerNotLoaded) {
+                event.isCancelled = true
+            }
+        }
+    }
+
+    @EventHandler
+    fun onCommand(event: PlayerCommandPreprocessEvent) {
+        val isPickupLocked = SyncConfig.behaviorLock?.getBoolean("command.lock", true) ?: true
+        if (!isPickupLocked) {
+            return
+        }
+        val bypassCommands = SyncConfig.behaviorLock?.getStringList("command.bypass-commands") ?: emptyList()
+        if (bypassCommands.any { event.message.startsWith(it) }) {
+            return
+        }
+        val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
+        if (isPlayerNotLoaded) {
             event.isCancelled = true
         }
     }
