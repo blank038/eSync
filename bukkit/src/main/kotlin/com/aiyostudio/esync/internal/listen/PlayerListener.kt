@@ -99,6 +99,7 @@ class PlayerListener : Listener {
             val repository = RepositoryHandler.repository ?: return@forEach
             val module = ModuleHandler.findByKey(it) ?: return@forEach
             val bytea = module.toByteArray(uuid) ?: return@forEach
+            module.unloadCache(uuid)
             Bukkit.getScheduler().runTaskAsynchronously(this.plugin) {
                 if (repository.insert(uuid, module.uniqueKey, bytea, SyncState.LOCKED)) {
                     repository.updateState(uuid, module.uniqueKey, SyncState.COMPLETE)
