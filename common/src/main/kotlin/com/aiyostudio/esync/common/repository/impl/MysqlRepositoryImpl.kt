@@ -7,7 +7,6 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 open class MysqlRepositoryImpl(
@@ -15,21 +14,21 @@ open class MysqlRepositoryImpl(
     private val user: String,
     private val password: String
 ) : IRepository {
-    protected val esyncDataTable = "`esync_data`"
-    protected val sql = arrayOf(
+    protected val esyncDataTable = "esync_data"
+    protected open val sql = arrayOf(
         """
-        CREATE TABLE IF NOT EXISTS $esyncDataTable
-        (
-            `id`         BIGINT AUTO_INCREMENT NOT NULL,
-            `owner_uuid` VARCHAR(40)           NOT NULL,
-            `module`     VARCHAR(100)          NOT NULL,
-            `data`       MEDIUMBLOB            NOT NULL,
-            `state`      ENUM ('COMPLETE', 'WAITING', 'LOCKED'),
-            PRIMARY KEY (`id`),
-            INDEX idx_owner (owner_uuid),
-            INDEX idx_state (state),
-            INDEX idx_module (module)
-        ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+            CREATE TABLE IF NOT EXISTS $esyncDataTable
+            (
+                `id`         BIGINT AUTO_INCREMENT NOT NULL,
+                `owner_uuid` VARCHAR(40)           NOT NULL,
+                `module`     VARCHAR(100)          NOT NULL,
+                `data`       MEDIUMBLOB            NOT NULL,
+                `state`      ENUM ('COMPLETE', 'WAITING', 'LOCKED'),
+                PRIMARY KEY (`id`),
+                INDEX idx_owner (owner_uuid),
+                INDEX idx_state (state),
+                INDEX idx_module (module)
+            ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
         """.trimIndent()
     )
     override val id = "MySQL"
@@ -46,10 +45,12 @@ open class MysqlRepositoryImpl(
         val result = AtomicBoolean(false)
         this.connect {
             val sql = "SELECT state FROM $esyncDataTable WHERE owner_uuid = ? AND module = ?"
-            it.prepareStatement(sql).use { statement ->
-                statement.setString(1, uuid.toString())
-                statement.setString(2, module)
-                statement.executeQuery().use { rs -> result.set(rs.next()) }
+            it.use { conn ->
+                conn.prepareStatement(sql).use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.setString(2, module)
+                    statement.executeQuery().use { rs -> result.set(rs.next()) }
+                }
             }
         }
         return result.get()
@@ -143,40 +144,36 @@ open class MysqlRepositoryImpl(
     override fun disable() {
     }
 
-    private fun connectTransaction(uuid: UUID, module: String, block: (connect: Connection, id: Int) -> Unit) {
+    open fun connectTransaction(uuid: UUID, module: String, block: (connect: Connection, id: Int) -> Unit) {
         with(this.getConnection()) {
-            this.autoCommit = false
-            try {
-                this.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-                val lockQuery = "SELECT id FROM esync_data WHERE owner_uuid = ? AND module = ? FOR UPDATE;"
-                val id = AtomicInteger(-1)
-                this.prepareStatement(lockQuery).use { statement ->
-                    statement.setString(1, uuid.toString())
-                    statement.setString(2, module)
-                    statement.executeQuery().use { rs ->
-                        if (rs.next()) {
-                            id.set(rs.getInt(1))
+            this.use {
+                this.autoCommit = false
+                try {
+                    this.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+                    val lockQuery = "SELECT id FROM esync_data WHERE owner_uuid = ? AND module = ? FOR UPDATE;"
+                    var id = -1
+                    this.prepareStatement(lockQuery).use { statement ->
+                        statement.setString(1, uuid.toString())
+                        statement.setString(2, module)
+                        statement.executeQuery().use { rs ->
+                            if (rs.next()) {
+                                id = rs.getInt(1)
+                            }
                         }
                     }
+                    block(this, id)
+                    this.commit()
+                } catch (e: Exception) {
+                    this.rollback()
+                } finally {
+                    this.autoCommit = true
                 }
-                block(this, id.get())
-                this.commit()
-            } catch (e: Exception) {
-                this.rollback()
-            } finally {
-                this.close()
             }
         }
     }
 
-    private fun connect(block: (connect: Connection) -> Unit) {
-        with(this.getConnection()) {
-            try {
-                block(this)
-            } finally {
-                this.close()
-            }
-        }
+    open fun connect(block: (connect: Connection) -> Unit) {
+        with(this.getConnection()) { this.use { block(this) } }
     }
 
     open fun getConnection(): Connection {

@@ -1,6 +1,7 @@
 package com.aiyostudio.esync.internal.config
 
 import com.aiyostudio.esync.common.repository.impl.MysqlRepositoryImpl
+import com.aiyostudio.esync.common.repository.impl.PostgresRepositoryImpl
 import com.aiyostudio.esync.internal.api.event.InitModulesEvent
 import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
@@ -55,21 +56,16 @@ object SyncConfig {
             LoggerUtil.print("&cFailed to initialize repository, check the config.yml file.", true)
             return
         }
-        RepositoryHandler.repository = when(type) {
-            "mysql" -> MysqlRepositoryImpl(
-                sourceConfig.getString("url"),
-                sourceConfig.getString("user"),
-                sourceConfig.getString("password")
-            )
-            "mysql-variant" -> MysqlVariantRepositoryImpl(
-                sourceConfig.getString("url"),
-                sourceConfig.getString("user"),
-                sourceConfig.getString("password")
-            )
+        val url = sourceConfig.getString("url")
+        val user = sourceConfig.getString("user")
+        val password = sourceConfig.getString("password")
+        RepositoryHandler.repository = when (type) {
+            "mysql" -> MysqlRepositoryImpl(url, user, password)
+            "mysql-variant" -> MysqlVariantRepositoryImpl(url, user, password)
+            "postgres" -> PostgresRepositoryImpl(url, user, password)
             else -> throw NullPointerException("Failed to initialize repository.")
         }
         RepositoryHandler.repository?.run { this.init() }
-
         LoggerUtil.print("&6 * &fSync source: &e${RepositoryHandler.repository?.id ?: "NONE"}")
     }
 }
