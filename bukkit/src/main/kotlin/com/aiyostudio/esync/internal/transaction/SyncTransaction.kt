@@ -64,8 +64,12 @@ class SyncTransaction(
         val repository = RepositoryHandler.repository ?: return
         this.modules.forEach {
             repository.updateState(uuid, it, SyncState.LOCKED)
-            val module = ModuleHandler.findByKey(it)!!
-            module.apply(player.uniqueId)
+            Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
+                val module = ModuleHandler.findByKey(it)!!
+                if (module.apply(player.uniqueId)) {
+                    CacheHandler.playerCaches[player.uniqueId]!!.load(module.uniqueKey)
+                }
+            }
         }
     }
 }

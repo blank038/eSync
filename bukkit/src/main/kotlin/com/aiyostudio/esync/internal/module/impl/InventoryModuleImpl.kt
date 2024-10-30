@@ -68,7 +68,7 @@ class InventoryModuleImpl(
             val slot = byteBuf.readInt()
             val length = byteBuf.readInt()
             val bytes = ByteArray(length)
-            byteBuf.readBytes(length)
+            byteBuf.readBytes(bytes)
             val item = SerializerUtil.deserializerItem(bytes)
             entity.inventory[slot] = item
         }

@@ -74,9 +74,8 @@ class PlayerStatusModuleImpl(
             val str = String(byteArray, Charsets.UTF_8)
             val yaml = YamlConfiguration()
             yaml.loadFromString(str)
-            val map = yaml.getConfigurationSection("potion").getValues(false)
-            val option = ConfigurationSerialization.deserializeObject(map, PotionEffect::class.java) as PotionEffect
-            result.potions.add(option)
+            val potion = yaml.get("potion") as PotionEffect
+            result.potions.add(potion)
         }
         return result
     }

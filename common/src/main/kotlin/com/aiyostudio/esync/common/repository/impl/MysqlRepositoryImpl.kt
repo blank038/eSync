@@ -146,6 +146,12 @@ class MysqlRepositoryImpl(
     }
 
     private fun connect(block: (connect: Connection) -> Unit) {
-        with(DriverManager.getConnection(url, user, password)) { block(this) }
+        with(DriverManager.getConnection(url, user, password)) {
+            try {
+                block(this)
+            } finally {
+                this.close()
+            }
+        }
     }
 }
