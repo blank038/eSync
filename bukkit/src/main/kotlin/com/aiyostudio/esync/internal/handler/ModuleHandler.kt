@@ -3,7 +3,9 @@ package com.aiyostudio.esync.internal.handler
 import com.aiyostudio.esync.common.module.IEntity
 import com.aiyostudio.esync.common.module.IModule
 import com.aiyostudio.esync.internal.api.event.ModuleRegistryEvent
+import com.aiyostudio.esync.internal.module.impl.EnderChestModuleImpl
 import com.aiyostudio.esync.internal.module.impl.InventoryModuleImpl
+import com.aiyostudio.esync.internal.module.impl.PlayerStatusModuleImpl
 import org.bukkit.Bukkit
 import org.bukkit.configuration.ConfigurationSection
 
@@ -14,6 +16,8 @@ object ModuleHandler {
         if (!option.getBoolean("enable")) return null
         when (key) {
             "inventory" -> return InventoryModuleImpl(option)
+            "player-status" -> return PlayerStatusModuleImpl(option)
+            "ender-chest" -> return EnderChestModuleImpl(option)
         }
         return null
     }

@@ -48,10 +48,16 @@ modules:
   # Player status, including: health, buffs
   player-status:
     enable: true
+    # 每次登录都清空玩家背包
+    # Clear potion every time
+    always-clear: true
   # 末影箱
   # Ender chest
   ender-chest:
     enable: true
+    # 每次登录都清空玩家背包
+    # Clear ender-chest every time
+    always-clear: true
 
 # 至少加载了哪些模块才允许行动(移动, 执行命令)
 # At least which modules are loaded to allow actions (move, command)

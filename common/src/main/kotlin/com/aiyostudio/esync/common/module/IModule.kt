@@ -31,6 +31,8 @@ interface IModule<out T : IEntity> {
 
     fun toByteArray(uuid: UUID): ByteArray?
 
+    fun wrapper(bytea: ByteArray): T
+
     /**
      * When player cache data is unloaded.
      */
