@@ -32,7 +32,9 @@ class PlayerStatusModuleImpl(
     override fun preLoad(uuid: UUID) {
         if (option.getBoolean("always-clear")) {
             val player = Bukkit.getPlayer(uuid)
-            player.activePotionEffects.stream().map { it.type }.forEach { player.removePotionEffect(it) }
+            player?.takeIf { it.isOnline }?.run {
+                activePotionEffects.stream().map { it.type }.forEach { player.removePotionEffect(it) }
+            }
         }
     }
 

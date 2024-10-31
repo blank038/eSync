@@ -32,7 +32,7 @@ class InventoryModuleImpl(
     override fun preLoad(uuid: UUID) {
         if (option.getBoolean("always-clear")) {
             val player = Bukkit.getPlayer(uuid)
-            player.inventory.clear()
+            player?.takeIf { it.isOnline }?.run { inventory.clear() }
         }
     }
 
