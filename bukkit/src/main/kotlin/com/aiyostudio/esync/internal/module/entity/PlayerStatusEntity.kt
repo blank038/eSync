@@ -21,7 +21,9 @@ class PlayerStatusEntity : IEntity {
                 return true
             }
         } catch (e: Exception) {
-            EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) { "Failed to apply 'player-status' data for ${(player as Player).uniqueId}" }
+            EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) {
+                "Failed to apply 'player-status' data for ${(player as Player).uniqueId}"
+            }
         }
         return false
     }

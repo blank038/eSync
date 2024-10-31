@@ -17,7 +17,9 @@ class PlayerInventoryEntity : IEntity {
                 return true
             }
         } catch (e: Exception) {
-            EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) { "Failed to apply 'inventory' data for ${(player as Player).uniqueId}" }
+            EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) {
+                "Failed to apply 'inventory' data for ${(player as Player).uniqueId}"
+            }
         }
         return false
     }
