@@ -6,6 +6,7 @@ import com.aiyostudio.esync.internal.api.event.ModuleRegistryEvent
 import com.aiyostudio.esync.internal.module.impl.EnderChestModuleImpl
 import com.aiyostudio.esync.internal.module.impl.InventoryModuleImpl
 import com.aiyostudio.esync.internal.module.impl.PlayerStatusModuleImpl
+import com.aiyostudio.esync.internal.module.impl.StatisticsModuleImpl
 import org.bukkit.Bukkit
 import org.bukkit.configuration.ConfigurationSection
 
@@ -18,6 +19,7 @@ object ModuleHandler {
             "inventory" -> return InventoryModuleImpl(option)
             "player-status" -> return PlayerStatusModuleImpl(option)
             "ender-chest" -> return EnderChestModuleImpl(option)
+            "statistics" -> return StatisticsModuleImpl(option)
         }
         return null
     }
