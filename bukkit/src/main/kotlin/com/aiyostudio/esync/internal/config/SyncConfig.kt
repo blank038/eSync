@@ -6,10 +6,10 @@ import com.aiyostudio.esync.internal.api.event.InitModulesEvent
 import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.handler.RepositoryHandler
+import com.aiyostudio.esync.internal.i18n.I18n
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.repository.MysqlVariantRepositoryImpl
 import com.aiyostudio.esync.internal.util.LoggerUtil
-import com.aiyostudio.supermarketpremium.internal.config.i18n.I18n
 import org.bukkit.Bukkit
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
@@ -37,6 +37,7 @@ object SyncConfig {
 
     private fun registerModules(config: FileConfiguration) {
         ModuleHandler.unloadAllModule()
+        LoggerUtil.print("&6 * &fLoad modules:")
         config.getConfigurationSection("modules")?.getKeys(false)?.forEach {
             val option = config.getConfigurationSection("modules.$it")
             if (option?.getBoolean("enable") == true) {

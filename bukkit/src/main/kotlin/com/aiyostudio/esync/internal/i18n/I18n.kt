@@ -1,4 +1,4 @@
-package com.aiyostudio.supermarketpremium.internal.config.i18n
+package com.aiyostudio.esync.internal.i18n
 
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aystudio.core.bukkit.util.common.CommonUtil
