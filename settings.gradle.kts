@@ -2,6 +2,10 @@ pluginManagement {
     plugins {
         kotlin("jvm") version "2.0.20"
     }
+    repositories {
+        gradlePluginPortal()
+        maven { url = uri("https://maven.minecraftforge.net/") }
+    }
 }
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
@@ -9,3 +13,4 @@ plugins {
 rootProject.name = "eSync"
 
 include("common", "bukkit", ":nms:v1_12_R1")
+include(":module:pixelmon-1.12.2")

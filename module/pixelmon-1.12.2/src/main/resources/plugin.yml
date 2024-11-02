@@ -1,0 +1,10 @@
+name: eSyncPixelmon
+main: com.aiyostudio.esyncpixelmon.SyncPixelmon
+depend:
+  - AyCore
+loadbefore:
+  - eSync
+version: ${version}
+commands:
+  syncpixelmon:
+    description: Command for eSyncPixelmon.
