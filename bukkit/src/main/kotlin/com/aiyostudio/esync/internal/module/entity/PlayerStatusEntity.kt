@@ -16,7 +16,7 @@ class PlayerStatusEntity : IEntity {
         try {
             if (player is Player) {
                 player.getAttribute(Attribute.GENERIC_MAX_HEALTH).baseValue = maxHealth
-                player.health = health
+                player.health = Math.min(health, maxHealth)
                 potions.forEach { player.addPotionEffect(it) }
                 return true
             }

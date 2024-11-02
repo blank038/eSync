@@ -7,7 +7,6 @@ import org.bukkit.Bukkit
 import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.potion.PotionEffect
 import java.util.*
 
