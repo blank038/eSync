@@ -4,13 +4,16 @@ import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
 
 class InitModulesEvent : Event() {
-    private val handlerList = HandlerList()
+    companion object {
+        private val handlerList = HandlerList()
 
-    override fun getHandlers(): HandlerList {
-        return handlerList
+        @JvmStatic
+        fun getHandlerList(): HandlerList {
+            return handlerList
+        }
     }
 
-    fun getHandlerList(): HandlerList {
+    override fun getHandlers(): HandlerList {
         return handlerList
     }
 }

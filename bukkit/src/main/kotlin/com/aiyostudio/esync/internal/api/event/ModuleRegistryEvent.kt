@@ -9,14 +9,18 @@ import org.bukkit.event.HandlerList
 class ModuleRegistryEvent(
     val module: IModule<IEntity>
 ) : Event(), Cancellable {
-    private val handlerList = HandlerList()
     private var cancelled: Boolean = false
 
-    override fun getHandlers(): HandlerList {
-        return handlerList
+    companion object {
+        private val handlerList = HandlerList()
+
+        @JvmStatic
+        fun getHandlerList(): HandlerList {
+            return handlerList
+        }
     }
 
-    fun getHandlerList(): HandlerList {
+    override fun getHandlers(): HandlerList {
         return handlerList
     }
 
