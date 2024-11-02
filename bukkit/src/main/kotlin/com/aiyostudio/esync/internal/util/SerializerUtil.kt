@@ -4,6 +4,7 @@ import com.aiyostudio.esync.common.EfficientSync
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.serializer.IDataSerializer
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 
@@ -31,5 +32,13 @@ object SerializerUtil {
 
     fun deserializerItem(byteArray: ByteArray): ItemStack {
         return this.serializer.deserializerItem(byteArray)
+    }
+
+    fun serializerStatistics(player: Player): String? {
+        return this.serializer.serializerStatistics(player)
+    }
+
+    fun deserializerStatistics(player: Player, str: String?): Boolean {
+        return this.serializer.deserializerStatistics(player, str)
     }
 }

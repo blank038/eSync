@@ -6,9 +6,9 @@ import com.aiyostudio.esync.internal.config.SyncConfig
 import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.handler.RepositoryHandler
+import com.aiyostudio.esync.internal.i18n.I18n
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.transaction.SyncTransaction
-import com.aiyostudio.supermarketpremium.internal.config.i18n.I18n
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -116,7 +116,7 @@ class PlayerListener : Listener {
             ).start()
             // load other modules
             ModuleHandler.getAllModules(CacheHandler.dependModules).forEach {
-                SyncTransaction(player.uniqueId, listOf(it))
+                SyncTransaction(player.uniqueId, listOf(it)).start()
             }
         }, 10L)
     }

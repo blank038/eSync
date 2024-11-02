@@ -7,6 +7,7 @@ import com.aiyostudio.esync.internal.module.impl.EnderChestModuleImpl
 import com.aiyostudio.esync.internal.module.impl.InventoryModuleImpl
 import com.aiyostudio.esync.internal.module.impl.PlayerStatusModuleImpl
 import com.aiyostudio.esync.internal.module.impl.StatisticsModuleImpl
+import com.aiyostudio.esync.internal.util.LoggerUtil
 import org.bukkit.Bukkit
 import org.bukkit.configuration.ConfigurationSection
 
@@ -33,6 +34,7 @@ object ModuleHandler {
             modules[this.uniqueKey] = this
             this.init()
         }
+        LoggerUtil.print("&e   + &f${moduleImpl.uniqueKey}")
         return true
     }
 

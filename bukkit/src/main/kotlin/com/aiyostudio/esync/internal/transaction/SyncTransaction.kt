@@ -10,11 +10,11 @@ import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.util.PlayerUtil
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import java.lang.Exception
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Level
 
-@Deprecated("Temporary transaction logic.")
 class SyncTransaction(
     private val uuid: UUID,
     private val modules: List<String>,
@@ -25,10 +25,6 @@ class SyncTransaction(
     private var cancelled = false
 
     fun start() {
-        val repository = RepositoryHandler.repository ?: run {
-            this.failed.invoke(uuid)
-            return
-        }
         val list = modules.map { k ->
             CompletableFuture.supplyAsync {
                 if (PlayerUtil.isOnline(uuid)) {
@@ -49,26 +45,35 @@ class SyncTransaction(
         CompletableFuture.allOf(*list.toTypedArray())
             .thenApply { list.stream().allMatch { v -> v.isDone && v.get() == TransactionState.COMPLETE } }
             .thenAccept { allCompleted ->
-                val player = Bukkit.getPlayer(uuid)
-                if (player != null && player.isOnline && CacheHandler.playerCaches.containsKey(uuid) && allCompleted && !cancelled) {
-                    this.apply(player)
-                    success.invoke(uuid)
-                } else {
-                    this.completeList.forEach { v -> repository.updateState(uuid, v, SyncState.COMPLETE) }
-                    failed.invoke(uuid)
-                }
+                Bukkit.getPlayer(uuid)?.takeIf { it.isOnline }?.let {
+                    val result = CacheHandler.playerCaches.containsKey(uuid) && allCompleted && !cancelled
+                    if (result) apply(it) else failed(uuid)
+                } ?: failed()
             }
     }
 
-    private fun apply(player: Player) {
+    private fun failed() {
         val repository = RepositoryHandler.repository ?: return
-        this.modules.forEach {
-            repository.updateState(uuid, it, SyncState.LOCKED)
-            Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
-                val module = ModuleHandler.findByKey(it)!!
-                if (module.apply(player.uniqueId)) {
-                    CacheHandler.playerCaches[player.uniqueId]!!.load(module.uniqueKey)
+        this.completeList.forEach { v -> repository.updateState(uuid, v, SyncState.COMPLETE) }
+        failed(uuid)
+    }
+
+    private fun apply(player: Player) {
+        Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
+            try {
+                val repository = RepositoryHandler.repository ?: return@runTask
+                val result = this.modules.all {
+                    repository.updateState(uuid, it, SyncState.LOCKED)
+                    val module = ModuleHandler.findByKey(it)!!
+                    if (module.apply(player.uniqueId)) {
+                        CacheHandler.playerCaches[player.uniqueId]!!.load(module.uniqueKey)
+                        return@all true
+                    }
+                    false
                 }
+                if (result) success(uuid) else failed()
+            } catch (e: Exception) {
+                EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) { "Failed to apply ${player.name} data." }
             }
         }
     }

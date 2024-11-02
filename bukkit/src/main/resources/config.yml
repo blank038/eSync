@@ -82,3 +82,5 @@ depends:
   - "player-status"
   - "ender-chest"
   - "statistics"
+# 调试 / Debug
+debug: false
