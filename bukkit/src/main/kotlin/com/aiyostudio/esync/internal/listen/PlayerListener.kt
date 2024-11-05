@@ -1,11 +1,9 @@
 package com.aiyostudio.esync.internal.listen
 
-import com.aiyostudio.esync.common.enums.SyncState
 import com.aiyostudio.esync.internal.cache.PlayerCache
 import com.aiyostudio.esync.internal.config.SyncConfig
 import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
-import com.aiyostudio.esync.internal.handler.RepositoryHandler
 import com.aiyostudio.esync.internal.i18n.I18n
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.transaction.SyncTransaction
@@ -22,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.server.PluginDisableEvent
 
 class PlayerListener : Listener {
     private val plugin = EfficientSyncBukkit.instance
@@ -123,18 +122,14 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
-        val player = event.player
-        CacheHandler.playerCaches.remove(player.uniqueId)?.getLoadedModules()?.forEach {
-            val uuid = player.uniqueId
-            val repository = RepositoryHandler.repository ?: return@forEach
-            val module = ModuleHandler.findByKey(it) ?: return@forEach
-            val bytea = module.toByteArray(uuid) ?: return@forEach
-            module.unloadCache(uuid)
-            Bukkit.getScheduler().runTaskAsynchronously(this.plugin) {
-                if (repository.insert(uuid, module.uniqueKey, bytea, SyncState.LOCKED)) {
-                    repository.updateState(uuid, module.uniqueKey, SyncState.COMPLETE)
-                }
-            }
+        CacheHandler.removeAndSaved(event.player)
+    }
+
+    @EventHandler
+    fun onPluginUnload(event: PluginDisableEvent) {
+        if (event.plugin != EfficientSyncBukkit.instance) {
+            return
         }
+        Bukkit.getOnlinePlayers().forEach { CacheHandler::removeAndSaved }
     }
 }
