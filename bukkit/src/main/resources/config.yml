@@ -59,6 +59,10 @@ modules:
     # 每次登录都清空玩家背包
     # Clear inventory every time
     always-clear: true
+    # 首次登录的玩家执行命令
+    # Execute commands on player first login
+    first-login-commands:
+      - "say %player% hahaha."
   # 玩家状态, 含有: 血量、Buff
   # Player status, including: health, buffs
   player-status:

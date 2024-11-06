@@ -16,17 +16,24 @@ class InventoryModuleImpl(
     override val uniqueKey: String = "inventory"
 
     override fun firstLoad(uuid: UUID, bytea: ByteArray?): Boolean {
-        if (bytea == null || bytea.isEmpty()) {
-            this.caches[uuid] = PlayerInventoryEntity()
-        } else {
-            this.caches[uuid] = wrapper(bytea)
+        this.convertCache(uuid, bytea)
+        if (option.contains("first-login-commands")) {
+            this.caches[uuid]?.commands?.addAll(option.getStringList("first-login-commands"))
         }
         return true
     }
 
     override fun attemptLoad(uuid: UUID, bytea: ByteArray?): Boolean {
-        this.firstLoad(uuid, bytea)
+        this.convertCache(uuid, bytea)
         return true
+    }
+
+    private fun convertCache(uuid: UUID, bytea: ByteArray?) {
+        if (bytea == null || bytea.isEmpty()) {
+            this.caches[uuid] = PlayerInventoryEntity()
+        } else {
+            this.caches[uuid] = wrapper(bytea)
+        }
     }
 
     override fun preLoad(uuid: UUID) {
