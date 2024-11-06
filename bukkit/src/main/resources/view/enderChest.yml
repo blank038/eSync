@@ -1,0 +1,11 @@
+title: "&8玩家末影箱预览"
+size: 27
+contents: 0-26
+items:
+  panel:
+    type: STAINED_GLASS_PANE
+    amount: 1
+    data: 15
+    name: "&f"
+    lore: [ ]
+    slot: 0,1,6,8-17

@@ -1,0 +1,12 @@
+title: "&8玩家背包预览"
+size: 54
+contents: 18-53
+armor: 2,3,4,5,7
+items:
+  panel:
+    type: STAINED_GLASS_PANE
+    amount: 1
+    data: 15
+    name: "&f"
+    lore: [ ]
+    slot: 0,1,6,8-17
