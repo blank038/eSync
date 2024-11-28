@@ -30,14 +30,13 @@ repositories {
 
 dependencies {
     compileOnly("org.spigotmc:spigot:1.12.2-R0.1-SNAPSHOT")
-    compileOnly("com.aystudio.core:AyCore:1.2.0-BETA")
+    compileOnly("com.aystudio.core:AyCore:1.3.1-BETA")
     compileOnly(project(":bukkit"))
     compileOnly(project(":common"))
 
     minecraft("net.minecraftforge:forge:1.12.2-14.23.5.2860")
 
     compileOnly(fileTree("libs") { include("*.jar") })
-//    compileOnly(fileTree("${project.rootDir}/release") { include("*.jar") })
 }
 
 tasks {

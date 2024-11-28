@@ -10,10 +10,10 @@ import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
 import com.aiyostudio.esync.internal.util.PlayerUtil
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import java.lang.Exception
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Level
+import kotlin.Exception
 
 class SyncTransaction(
     private val uuid: UUID,
@@ -81,7 +81,7 @@ class SyncTransaction(
 
 private class SyncTask(
     private val uuid: UUID,
-    moduleId: String
+    private val moduleId: String
 ) {
     private val module = ModuleHandler.findByKey(moduleId)
     private val repository = RepositoryHandler.repository
