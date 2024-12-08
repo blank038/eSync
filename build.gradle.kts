@@ -53,6 +53,7 @@ dependencies {
     runtimeOnly(project(":common"))
     runtimeOnly(project(":bukkit"))
     runtimeOnly(project(":nms:v1_12_R1"))
+    runtimeOnly(project(":nms:v1_16_R3"))
 }
 
 tasks.register<ShadowJar>("shadowJarAll") {

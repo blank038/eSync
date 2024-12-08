@@ -12,5 +12,5 @@ plugins {
 }
 rootProject.name = "eSync"
 
-include("common", "bukkit", ":nms:v1_12_R1")
+include("common", "bukkit", ":nms:v1_12_R1", ":nms:v1_16_R3")
 include(":module:pixelmon-1.12.2")
