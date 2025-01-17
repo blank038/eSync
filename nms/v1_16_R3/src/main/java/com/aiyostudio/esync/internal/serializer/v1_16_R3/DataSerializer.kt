@@ -1,4 +1,4 @@
-package com.aiyostudio.esync.internal.v1_16_R3
+package com.aiyostudio.esync.internal.serializer.v1_16_R3
 
 import com.aiyostudio.esync.internal.serializer.IDataSerializer
 import io.netty.buffer.Unpooled
@@ -32,11 +32,13 @@ class DataSerializer : IDataSerializer {
         StatisticManager::class.java.declaredFields.find { it.name == "a" }?.let {
             it.isAccessible = true
             // reflect call
-            ServerStatisticManager::class.java.declaredMethods.find { method -> method.name == "b" }?.let { method ->
-                method.isAccessible = true
-                val result = method.invoke(statisticManager) as String
-                return result
-            }
+            ServerStatisticManager::class.java.declaredMethods
+                .find { method -> method.name == "b" && method.parameterCount == 0 }
+                ?.let { method ->
+                    method.isAccessible = true
+                    val result = method.invoke(statisticManager) as String
+                    return result
+                }
         }
         return null
     }
