@@ -12,7 +12,7 @@ object CacheHandler {
     val dependModules = mutableListOf<String>()
 
     fun removeAndSaved(player: Player) {
-        CacheHandler.playerCaches.remove(player.uniqueId)?.getLoadedModules()?.forEach {
+        playerCaches.remove(player.uniqueId)?.getLoadedModules()?.forEach {
             val uuid = player.uniqueId
             val repository = RepositoryHandler.repository ?: return@forEach
             val module = ModuleHandler.findByKey(it) ?: return@forEach
