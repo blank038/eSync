@@ -59,7 +59,7 @@ dependencies {
 tasks.register<ShadowJar>("shadowJarAll") {
     archiveBaseName.set("eSync")
     subprojects.forEach { subproject ->
-        if (subproject.name == "pixelmon-1.12.2") {
+        if (subproject.name == "pixelmon-1_12_2" || subproject.name == "pixelmon-1_16_5") {
             dependsOn(subproject.tasks.named("build"))
         } else {
             from(subproject.tasks.named("shadowJar").get().outputs.files) {
