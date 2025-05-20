@@ -24,10 +24,11 @@ class EfficientSyncBukkit : AyPlugin() {
         LoggerUtil.printHeader()
         // initialize module
         SyncConfig.init()
-        SerializerUtil.init()
-        // register events and commands
-        Bukkit.getPluginManager().registerEvents(PlayerListener(), this)
-        this.getCommand("esync").executor = SyncCommand()
+        if (SerializerUtil.init()) {
+            // register events and commands
+            Bukkit.getPluginManager().registerEvents(PlayerListener(), this)
+            this.getCommand("esync").executor = SyncCommand()
+        }
         // print fotter
         LoggerUtil.printFooter()
     }

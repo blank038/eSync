@@ -47,7 +47,7 @@ tasks {
     }
     shadowJar {
         archiveFileName = "$archiveName-${version}.jar"
-        exclude { !it.file.toString().contains("pixelmon-1.12.2\\build") }
+        exclude { !it.file.toString().contains("pixelmon-1_12_2\\build") }
         relocate("kotlin", "com.aiyostudio.esync.lib.kotlin")
     }
 }

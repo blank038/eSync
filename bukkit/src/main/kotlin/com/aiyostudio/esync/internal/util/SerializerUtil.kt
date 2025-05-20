@@ -6,12 +6,13 @@ import com.aiyostudio.esync.internal.serializer.IDataSerializer
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.util.logging.Level
 
 
 object SerializerUtil {
     private lateinit var serializer: IDataSerializer
 
-    fun init() {
+    fun init(): Boolean {
         try {
             val version = Bukkit.getServer().javaClass.getPackage().toString()
                 .replace(".", ",")
@@ -21,8 +22,10 @@ object SerializerUtil {
             val classz = Class.forName("${EfficientSync.path}.internal.serializer.$version.DataSerializer")
             serializer = classz.newInstance() as IDataSerializer
             LoggerUtil.print("&6 * &fLoaded version: &e${version}")
+            return true
         } catch (ex: Exception) {
-            EfficientSyncBukkit.instance.logger.severe("The current server version is not supported.")
+            EfficientSyncBukkit.instance.logger.log(Level.SEVERE, ex) { "The current server version is not supported." }
+            return false
         }
     }
 
