@@ -54,6 +54,7 @@ dependencies {
     runtimeOnly(project(":bukkit"))
     runtimeOnly(project(":nms:v1_12_R1"))
     runtimeOnly(project(":nms:v1_16_R3"))
+    runtimeOnly(project(":hooks:chemdah"))
 }
 
 tasks.register<ShadowJar>("shadowJarAll") {

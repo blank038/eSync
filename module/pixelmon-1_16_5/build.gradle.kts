@@ -30,7 +30,7 @@ repositories {
 
 dependencies {
     compileOnly("org.spigotmc:spigot:1.16.5-R0.1-SNAPSHOT")
-    compileOnly("com.aystudio.core:AyCore:1.3.1-BETA")
+    compileOnly("com.aystudio.core:AyCore:1.4.2-BETA")
     compileOnly(project(":bukkit"))
     compileOnly(project(":common"))
 

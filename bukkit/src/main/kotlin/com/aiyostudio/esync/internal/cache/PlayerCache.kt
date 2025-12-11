@@ -8,9 +8,14 @@ class PlayerCache {
 
     fun load(module: String) {
         this.loadedModules.add(module)
-        if (CacheHandler.dependModules.all { it in loadedModules }) {
+    }
+
+    fun checkDepends(): Boolean {
+        if (!dependLoaded && CacheHandler.dependModules.all { it in loadedModules }) {
             dependLoaded = true
+            return true
         }
+        return false
     }
 
     fun getLoadedModules(): Set<String> = loadedModules

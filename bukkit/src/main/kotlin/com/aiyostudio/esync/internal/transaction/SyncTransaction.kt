@@ -1,6 +1,7 @@
 package com.aiyostudio.esync.internal.transaction
 
 import com.aiyostudio.esync.common.enums.SyncState
+import com.aiyostudio.esync.internal.api.event.PlayerModuleEvent
 import com.aiyostudio.esync.internal.config.SyncConfig
 import com.aiyostudio.esync.internal.enums.TransactionState
 import com.aiyostudio.esync.internal.handler.CacheHandler
@@ -61,12 +62,24 @@ class SyncTransaction(
     private fun apply(player: Player) {
         Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
             try {
+                val playerCache = CacheHandler.playerCaches[player.uniqueId]
+                requireNotNull(playerCache)
+
                 val repository = RepositoryHandler.repository ?: return@runTask
                 val result = this.modules.all {
                     repository.updateState(uuid, it, SyncState.LOCKED)
-                    val module = ModuleHandler.findByKey(it)!!
+                    val module = ModuleHandler.findByKey(it) ?: return@all false
                     if (module.apply(player.uniqueId)) {
-                        CacheHandler.playerCaches[player.uniqueId]!!.load(module.uniqueKey)
+                        playerCache.load(module.uniqueKey)
+
+                        // TODO: wait refactor
+                        // call module event
+                        val event = PlayerModuleEvent.Loaded(player, module.uniqueKey)
+                        Bukkit.getPluginManager().callEvent(event)
+                        if (playerCache.checkDepends()) {
+                            val dependEvent = PlayerModuleEvent.DependLoaded(player)
+                            Bukkit.getPluginManager().callEvent(dependEvent)
+                        }
                         return@all true
                     }
                     false

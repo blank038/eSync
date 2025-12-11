@@ -4,6 +4,7 @@ import com.aiyostudio.esync.common.EfficientSync
 import com.aiyostudio.esync.internal.api.SyncApiBukkitImpl
 import com.aiyostudio.esync.internal.command.SyncCommand
 import com.aiyostudio.esync.internal.config.SyncConfig
+import com.aiyostudio.esync.internal.hooks.HookManager
 import com.aiyostudio.esync.internal.listen.PlayerListener
 import com.aiyostudio.esync.internal.util.LoggerUtil
 import com.aiyostudio.esync.internal.util.SerializerUtil
@@ -13,7 +14,7 @@ import org.bukkit.Bukkit
 class EfficientSyncBukkit : AyPlugin() {
 
     companion object {
-        lateinit var instance: AyPlugin
+        lateinit var instance: EfficientSyncBukkit
     }
 
     override fun onEnable() {
@@ -27,7 +28,10 @@ class EfficientSyncBukkit : AyPlugin() {
         if (SerializerUtil.init()) {
             // register events and commands
             Bukkit.getPluginManager().registerEvents(PlayerListener(), this)
+            // register command
             this.getCommand("esync").executor = SyncCommand()
+            // initialize hooks
+            HookManager.init()
         }
         // print fotter
         LoggerUtil.printFooter()

@@ -86,5 +86,10 @@ depends:
   - "player-status"
   - "ender-chest"
   - "statistics"
+
+# 当 depends 要求模块加载完后启用哪些 hooks 逻辑
+hooks:
+  chemdah: false
+
 # 调试 / Debug
 debug: false
