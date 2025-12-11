@@ -2,6 +2,7 @@ package com.aiyostudio.esync.internal.command
 
 import com.aiyostudio.esync.common.repository.IRepository
 import com.aiyostudio.esync.internal.config.SyncConfig
+import com.aiyostudio.esync.internal.handler.AutoSaveHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.handler.RepositoryHandler
 import com.aiyostudio.esync.internal.i18n.I18n
@@ -33,6 +34,7 @@ class SyncCommand : CommandExecutor {
             "reload" -> this.reload(sender)
             "inv" -> this.view("inventory", sender, params)
             "ender" -> this.view("enderchest", sender, params)
+            "autosave" -> this.autoSave(sender, params)
         }
         return false
     }
@@ -102,5 +104,35 @@ class SyncCommand : CommandExecutor {
         }
         val entity = module.wrapper(result) as EnderChestEntity
         EnderChestView(sender, entity)
+    }
+
+    private fun autoSave(sender: CommandSender, params: Array<out String>) {
+        if (params.size == 1) {
+            // 手动触发所有玩家数据保存
+            if (AutoSaveHandler.isEnabled()) {
+                Bukkit.getOnlinePlayers().forEach { player ->
+                    AutoSaveHandler.savePlayerData(player)
+                }
+                sender.sendMessage("§a已手动触发所有在线玩家的数据保存")
+            } else {
+                sender.sendMessage("§c自动保存功能未启用，请检查配置文件")
+            }
+        } else if (params.size == 2) {
+            // 保存指定玩家的数据
+            val targetPlayer = Bukkit.getPlayer(params[1])
+            if (targetPlayer == null) {
+                sender.sendMessage("§c玩家 " + params[1] + " 不在线")
+                return
+            }
+            
+            if (AutoSaveHandler.isEnabled()) {
+                AutoSaveHandler.savePlayerData(targetPlayer)
+                sender.sendMessage("§a已保存玩家 " + targetPlayer.name + " 的数据")
+            } else {
+                sender.sendMessage("§c自动保存功能未启用，请检查配置文件")
+            }
+        } else {
+            sender.sendMessage("§c用法: /esync autosave [玩家名]")
+        }
     }
 }

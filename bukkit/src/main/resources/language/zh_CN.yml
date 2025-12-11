@@ -6,6 +6,7 @@ commands:
   - "&e/%c inv <UUID> &f查看玩家背包数据"
   - "&e/%c ender <UUID> &f查看玩家末影箱"
   - "&e/%c reload &f重载插件配置"
+  - "&e/%c autosave [玩家名] &f手动触发数据保存"
 
 params:
   enter-uuid: "请输入玩家UUID."

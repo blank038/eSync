@@ -3,6 +3,7 @@ package com.aiyostudio.esync.internal.config
 import com.aiyostudio.esync.common.repository.impl.MysqlRepositoryImpl
 import com.aiyostudio.esync.common.repository.impl.PostgresRepositoryImpl
 import com.aiyostudio.esync.internal.api.event.InitModulesEvent
+import com.aiyostudio.esync.internal.handler.AutoSaveHandler
 import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.handler.RepositoryHandler
@@ -17,6 +18,7 @@ import org.bukkit.configuration.file.FileConfiguration
 object SyncConfig {
     var behaviorLock: ConfigurationSection? = null
     var autoUnlock: ConfigurationSection? = null
+    var autoSave: ConfigurationSection? = null
 
     fun init() {
         val plugin = EfficientSyncBukkit.instance
@@ -27,12 +29,15 @@ object SyncConfig {
         CacheHandler.dependModules.addAll(config.getStringList("depends").toSet())
         this.behaviorLock = config.getConfigurationSection("sync.behavior-lock")
         this.autoUnlock = config.getConfigurationSection("sync.auto-unlock")
+        this.autoSave = config.getConfigurationSection("sync.auto-save")
         // initialize i18n
         I18n(config.getString("language"))
         // register modules
         this.registerModules(config)
         // initialize repository
         this.initRepository(config)
+        // initialize auto-save
+        AutoSaveHandler.init(this.autoSave)
     }
 
     private fun registerModules(config: FileConfiguration) {

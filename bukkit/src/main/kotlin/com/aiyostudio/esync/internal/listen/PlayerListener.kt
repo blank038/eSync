@@ -2,6 +2,7 @@ package com.aiyostudio.esync.internal.listen
 
 import com.aiyostudio.esync.internal.cache.PlayerCache
 import com.aiyostudio.esync.internal.config.SyncConfig
+import com.aiyostudio.esync.internal.handler.AutoSaveHandler
 import com.aiyostudio.esync.internal.handler.CacheHandler
 import com.aiyostudio.esync.internal.handler.ModuleHandler
 import com.aiyostudio.esync.internal.i18n.I18n
@@ -130,6 +131,9 @@ class PlayerListener : Listener {
         if (event.plugin != EfficientSyncBukkit.instance) {
             return
         }
-        Bukkit.getOnlinePlayers().forEach { CacheHandler::removeAndSaved }
+        // 停止自动保存任务
+        AutoSaveHandler.stop()
+        // 保存所有在线玩家的数据
+        Bukkit.getOnlinePlayers().forEach(CacheHandler::removeAndSaved)
     }
 }

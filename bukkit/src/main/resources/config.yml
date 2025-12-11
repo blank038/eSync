@@ -48,6 +48,17 @@ sync:
     inv-click: true
     interact: true
     pickup: true
+  # 自动保存数据
+  # Auto save data
+  auto-save:
+    enable: true
+    modules:
+      - "inventory"
+      - "player-status"
+      - "ender-chest"
+      - "statistics"
+    # 秒 / seconds
+    delay: 60
 
 # 启动模块
 # Enable modules
