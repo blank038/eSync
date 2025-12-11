@@ -38,5 +38,11 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-## Hooks
+### Hooks ###
 hooks/**/libs/
+
+### AI ###
+.claude/
+.augment/
+.qoder/
+.crush/
