@@ -60,34 +60,76 @@ class SyncTransaction(
     }
 
     private fun apply(player: Player) {
-        Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
-            try {
-                val playerCache = CacheHandler.playerCaches[player.uniqueId]
-                requireNotNull(playerCache)
+        val playerCache = CacheHandler.playerCaches[player.uniqueId] ?: return
 
-                val repository = RepositoryHandler.repository ?: return@runTask
-                val result = this.modules.all {
-                    repository.updateState(uuid, it, SyncState.LOCKED)
-                    val module = ModuleHandler.findByKey(it) ?: return@all false
-                    if (module.apply(player.uniqueId)) {
-                        playerCache.load(module.uniqueKey)
+        // 将所有阻塞操作移到异步线程执行
+        CompletableFuture.supplyAsync {
+            val repository = RepositoryHandler.repository ?: return@supplyAsync Pair(emptyList<String>(), false)
 
-                        // TODO: wait refactor
-                        // call module event
-                        val event = PlayerModuleEvent.Loaded(player, module.uniqueKey)
-                        Bukkit.getPluginManager().callEvent(event)
-                        if (playerCache.checkDepends()) {
-                            val dependEvent = PlayerModuleEvent.DependLoaded(player)
-                            Bukkit.getPluginManager().callEvent(dependEvent)
-                        }
-                        return@all true
-                    }
-                    false
+            // 批量处理所有模块，减少线程切换开销
+            val successfulModules = mutableListOf<String>()
+
+            for (moduleId in modules) {
+                // 数据库操作移到异步线程
+                repository.updateState(uuid, moduleId, SyncState.LOCKED)
+                val module = ModuleHandler.findByKey(moduleId)
+
+                if (module != null && module.apply(player.uniqueId)) {
+                    // 玩家缓存加载移到异步线程
+                    playerCache.load(module.uniqueKey)
+                    successfulModules.add(module.uniqueKey)
+                } else {
+                    return@supplyAsync Pair(emptyList<String>(), false)
                 }
-                if (result) success(uuid) else failed()
-            } catch (e: Exception) {
-                EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) { "Failed to apply ${player.name} data." }
             }
+
+            // 返回处理结果和成功的模块列表
+            Pair(successfulModules, true)
+        }.thenAccept { result ->
+            val (successfulModules, success) = result
+            if (!success) {
+                // 在主线程执行失败回调
+                Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
+                    failed(uuid)
+                }
+                return@thenAccept
+            }
+
+            // 事件调用必须在主线程中执行以保证线程安全
+            Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
+                try {
+                    // 批量执行所有模块加载事件
+                    successfulModules.forEach { uniqueKey ->
+                        val event = PlayerModuleEvent.Loaded(player, uniqueKey)
+                        Bukkit.getPluginManager().callEvent(event)
+                    }
+
+                    // 如果需要，添加依赖加载事件
+                    if (playerCache.checkDepends()) {
+                        val dependEvent = PlayerModuleEvent.DependLoaded(player)
+                        Bukkit.getPluginManager().callEvent(dependEvent)
+                    }
+
+                    // 最终在主线程执行成功回调
+                    success(uuid)
+                } catch (e: Exception) {
+                    EfficientSyncBukkit.instance.logger.log(
+                        Level.WARNING,
+                        e
+                    ) { "Failed to execute events for ${player.name}." }
+                    failed(uuid)
+                }
+            }
+        }.exceptionally { ex ->
+            EfficientSyncBukkit.instance.logger.log(
+                Level.WARNING,
+                ex
+            ) { "Failed to process ${player.name} data asynchronously." }
+            // 在主线程执行失败回调
+            Bukkit.getScheduler().runTask(EfficientSyncBukkit.instance) {
+                failed(uuid)
+            }
+            null
         }
     }
 }

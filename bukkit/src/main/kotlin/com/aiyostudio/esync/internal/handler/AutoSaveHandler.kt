@@ -23,23 +23,29 @@ object AutoSaveHandler {
     fun init(config: ConfigurationSection?) {
         // 停止现有任务
         stop()
-        
+
         config ?: return
-        
+
         isEnabled = config.getBoolean("enable", false)
         if (!isEnabled) return
-        
+
         delay = config.getLong("delay", 60L).coerceAtLeast(1L) // 至少1秒
         modulesToSave = config.getStringList("modules")
-        
+
         if (modulesToSave.isEmpty()) {
             EfficientSyncBukkit.instance.logger.warning("Auto-save is enabled but no modules specified. Disabling auto-save.")
             isEnabled = false
             return
         }
-        
+
         start()
-        EfficientSyncBukkit.instance.logger.info("Auto-save enabled with delay: ${delay}s for modules: ${modulesToSave.joinToString(", ")}")
+        EfficientSyncBukkit.instance.logger.info(
+            "Auto-save enabled with delay: ${delay}s for modules: ${
+                modulesToSave.joinToString(
+                    ", "
+                )
+            }"
+        )
     }
 
     /**
@@ -47,12 +53,12 @@ object AutoSaveHandler {
      */
     private fun start() {
         if (!isEnabled) return
-        
+
         autoSaveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
             EfficientSyncBukkit.instance,
             { saveAllPlayersData() },
-            delay * 20L, // 初始延迟（转换为tick）
-            delay * 20L  // 重复间隔（转换为tick）
+            delay * 20L,
+            delay * 20L
         )
     }
 
@@ -70,9 +76,9 @@ object AutoSaveHandler {
     private fun saveAllPlayersData() {
         val onlinePlayers = Bukkit.getOnlinePlayers().toList()
         if (onlinePlayers.isEmpty()) return
-        
+
         EfficientSyncBukkit.instance.logger.info("Auto-saving data for ${onlinePlayers.size} players...")
-        
+
         onlinePlayers.forEach { player ->
             savePlayerData(player)
         }
@@ -86,25 +92,17 @@ object AutoSaveHandler {
         val playerCache = CacheHandler.playerCaches[player.uniqueId] ?: return
         val loadedModules = playerCache.getLoadedModules()
         val repository = RepositoryHandler.repository ?: return
-        
+
         // 只保存配置中指定的模块且已加载的模块
         modulesToSave.filter { it in loadedModules }.forEach { moduleKey ->
             try {
                 val module = ModuleHandler.findByKey(moduleKey) ?: return@forEach
                 val data = module.toByteArray(player.uniqueId) ?: return@forEach
-                
+
                 // 在异步线程中执行数据库操作
                 Bukkit.getScheduler().runTaskAsynchronously(EfficientSyncBukkit.instance) {
                     try {
                         repository.insert(player.uniqueId, module.uniqueKey, data, SyncState.LOCKED)
-//                        // 使用插入或更新逻辑，不影响缓存状态
-//                        if (repository.isExists(player.uniqueId, module.uniqueKey)) {
-//                            // 如果数据已存在，更新数据
-//                            repository.updateData(player.uniqueId, module.uniqueKey, data)
-//                        } else {
-//                            // 如果数据不存在，插入新数据
-//                            repository.insert(player.uniqueId, module.uniqueKey, data, SyncState.COMPLETE)
-//                        }
                     } catch (e: Exception) {
                         EfficientSyncBukkit.instance.logger.warning("Failed to auto-save $moduleKey for player ${player.name}: ${e.message}")
                     }
@@ -119,14 +117,4 @@ object AutoSaveHandler {
      * 检查自动保存是否启用
      */
     fun isEnabled(): Boolean = isEnabled
-
-    /**
-     * 获取保存间隔（秒）
-     */
-    fun getDelay(): Long = delay
-
-    /**
-     * 获取需要保存的模块列表
-     */
-    fun getModulesToSave(): List<String> = modulesToSave.toList()
 }
