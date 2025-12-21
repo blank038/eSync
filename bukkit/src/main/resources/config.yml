@@ -102,5 +102,30 @@ depends:
 hooks:
   chemdah: false
 
+# 加载提示设置
+# Loading notification settings
+loading-notification:
+  # 是否启用聊天消息提示
+  # Enable chat message notification
+  enable-chat-message: true
+  # 是否启用 Title 提示
+  # Enable title notification
+  enable-title: true
+  # Title 显示持续时间（秒）
+  # Title display duration (seconds)
+  title-duration: 30
+  # Title 淡入时间（秒）
+  # Title fade-in time (seconds)
+  title-fade-in: 0
+  # Title 淡出时间（秒）
+  # Title fade-out time (seconds)
+  title-fade-out: 0
+  # 同步完成时是否显示 Title 提示
+  # Show title notification when sync is complete
+  show-complete-title: true
+  # 同步完成时的 Title 显示持续时间（秒）
+  # Title display duration when sync is complete (seconds)
+  complete-title-duration: 3
+
 # 调试 / Debug
 debug: false

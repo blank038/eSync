@@ -16,6 +16,12 @@ params:
 sync:
   success: "数据同步完成."
   failed: "数据同步失败."
+  loading:
+    title: "&e正在同步数据中"
+    subtitle: "&f请耐心等待"
+  complete:
+    title: "&a数据已同步完成"
+    subtitle: "&f欢迎来到服务器"
 kick-all:
   reason: "&e服务器维护."
   message: "已将全部玩家踢出服务器."

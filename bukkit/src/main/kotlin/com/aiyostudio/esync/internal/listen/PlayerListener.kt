@@ -124,18 +124,62 @@ class PlayerListener : Listener {
     fun onJoin(event: PlayerJoinEvent) {
         val player = event.player
         CacheHandler.playerCaches[player.uniqueId] = PlayerCache()
+
+        // 显示加载提示
+        if (SyncConfig.isTitleEnabled()) {
+            val fadeIn = SyncConfig.getTitleFadeIn() * 20
+            val stay = SyncConfig.getTitleDuration() * 20
+            val fadeOut = SyncConfig.getTitleFadeOut() * 20
+            player.sendTitle(
+                I18n.getOption("sync.loading.title"),
+                I18n.getOption("sync.loading.subtitle"),
+                fadeIn,
+                stay,
+                fadeOut
+            )
+        }
+
         Bukkit.getScheduler().runTaskLater(this.plugin, {
             if (player?.isOnline == false) {
                 return@runTaskLater
             }
-            // load depend modules
+
+            // 加载依赖模块
             SyncTransaction(
                 player.uniqueId,
                 CacheHandler.dependModules,
-                { player.sendMessage(I18n.getStrAndHeader("sync.success")) },
-                { player.sendMessage(I18n.getStrAndHeader("sync.failed")) }
+                {
+                    if (SyncConfig.isChatMessageEnabled()) {
+                        player.sendMessage(I18n.getStrAndHeader("sync.success"))
+                    }
+                    
+                    // 显示同步完成Title
+                    if (SyncConfig.isTitleEnabled() && SyncConfig.isShowCompleteTitle()) {
+                        val fadeIn = SyncConfig.getTitleFadeIn() * 20
+                        val stay = SyncConfig.getCompleteTitleDuration() * 20
+                        val fadeOut = SyncConfig.getTitleFadeOut() * 20
+                        player.sendTitle(
+                            I18n.getOption("sync.complete.title"),
+                            I18n.getOption("sync.complete.subtitle"),
+                            fadeIn,
+                            stay,
+                            fadeOut
+                        )
+                    }
+                },
+                {
+                    if (SyncConfig.isChatMessageEnabled()) {
+                        player.sendMessage(I18n.getStrAndHeader("sync.failed"))
+                    }
+                    
+                    // 清除加载提示Title
+                    if (SyncConfig.isTitleEnabled()) {
+                        player.sendTitle("", "", 0, 0, 0)
+                    }
+                }
             ).start()
-            // load other modules
+
+            // 加载其他模块
             ModuleHandler.getAllModules(CacheHandler.dependModules).forEach {
                 SyncTransaction(player.uniqueId, listOf(it)).start()
             }

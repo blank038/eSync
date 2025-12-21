@@ -19,6 +19,7 @@ object SyncConfig {
     var behaviorLock: ConfigurationSection? = null
     var autoUnlock: ConfigurationSection? = null
     var autoSave: ConfigurationSection? = null
+    var loadingNotification: ConfigurationSection? = null
 
     fun init() {
         val plugin = EfficientSyncBukkit.instance
@@ -30,6 +31,7 @@ object SyncConfig {
         this.behaviorLock = config.getConfigurationSection("sync.behavior-lock")
         this.autoUnlock = config.getConfigurationSection("sync.auto-unlock")
         this.autoSave = config.getConfigurationSection("sync.auto-save")
+        this.loadingNotification = config.getConfigurationSection("loading-notification")
         // initialize i18n
         I18n(config.getString("language"))
         // register modules
@@ -73,5 +75,54 @@ object SyncConfig {
         }
         RepositoryHandler.repository?.run { this.init() }
         LoggerUtil.print("&6 * &fSync source: &e${RepositoryHandler.repository?.id ?: "NONE"}")
+    }
+
+    /**
+     * 检查是否启用了加载提示中的聊天消息
+     */
+    fun isChatMessageEnabled(): Boolean {
+        return this.loadingNotification?.getBoolean("enable-chat-message", true) ?: true
+    }
+
+    /**
+     * 检查是否启用了加载提示中的Title
+     */
+    fun isTitleEnabled(): Boolean {
+        return this.loadingNotification?.getBoolean("enable-title", true) ?: true
+    }
+
+    /**
+     * 获取Title显示持续时间（秒）
+     */
+    fun getTitleDuration(): Int {
+        return this.loadingNotification?.getInt("title-duration", 3) ?: 3
+    }
+
+    /**
+     * 获取Title淡入时间（秒）
+     */
+    fun getTitleFadeIn(): Int {
+        return this.loadingNotification?.getInt("title-fade-in", 1) ?: 1
+    }
+
+    /**
+     * 获取Title淡出时间（秒）
+     */
+    fun getTitleFadeOut(): Int {
+        return this.loadingNotification?.getInt("title-fade-out", 1) ?: 1
+    }
+
+    /**
+     * 检查是否显示同步完成的Title
+     */
+    fun isShowCompleteTitle(): Boolean {
+        return this.loadingNotification?.getBoolean("show-complete-title", true) ?: true
+    }
+
+    /**
+     * 获取同步完成时的Title显示持续时间（秒）
+     */
+    fun getCompleteTitleDuration(): Int {
+        return this.loadingNotification?.getInt("complete-title-duration", 3) ?: 3
     }
 }
