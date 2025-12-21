@@ -7,6 +7,7 @@ commands:
   - "&e/%c ender <UUID> &f查看玩家末影箱"
   - "&e/%c reload &f重载插件配置"
   - "&e/%c autosave [玩家名] &f手动触发数据保存"
+  - "&e/%c saveandstop <秒> &f保存数据并在指定秒数后关闭服务器"
 
 params:
   enter-uuid: "请输入玩家UUID."
@@ -23,3 +24,9 @@ reload: "插件配置重载完成."
 repo-failure: "没有找到可用的数据同步源."
 module-failure: "没有找到可用的数据模块."
 empty-data: "没有找到玩家数据."
+save-and-stop:
+  usage: "&c用法: /esync saveandstop <秒数>"
+  invalid-time: "&c请输入有效的秒数(大于0的整数)."
+  initiated: "&a服务器将在 %seconds% 秒后关闭, 已保存所有玩家数据并踢出所有玩家."
+  kick-reason: "&e服务器即将关闭维护."
+  countdown: "&e服务器将在 %seconds% 秒后关闭..."

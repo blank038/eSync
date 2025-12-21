@@ -1,6 +1,7 @@
 package com.aiyostudio.esync.internal.listen
 
 import com.aiyostudio.esync.internal.cache.PlayerCache
+import com.aiyostudio.esync.internal.command.SyncCommand
 import com.aiyostudio.esync.internal.config.SyncConfig
 import com.aiyostudio.esync.internal.handler.AutoSaveHandler
 import com.aiyostudio.esync.internal.handler.CacheHandler
@@ -18,7 +19,9 @@ import org.bukkit.event.player.AsyncPlayerChatEvent
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerLoginEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.PluginDisableEvent
@@ -96,6 +99,24 @@ class PlayerListener : Listener {
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
         if (isPlayerNotLoaded) {
             event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPreLogin(event: AsyncPlayerPreLoginEvent) {
+        // 检查是否处于维护模式
+        if (SyncCommand.isInMaintainMode()) {
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, I18n.getOption("save-and-stop.kick-reason"))
+            return
+        }
+    }
+
+    @EventHandler
+    fun onLogin(event: PlayerLoginEvent) {
+        // 再次检查维护模式，以防PreLogin事件被其他插件修改
+        if (SyncCommand.isInMaintainMode()) {
+            event.disallow(PlayerLoginEvent.Result.KICK_OTHER, I18n.getOption("save-and-stop.kick-reason"))
+            return
         }
     }
 

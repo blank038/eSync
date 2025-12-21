@@ -23,6 +23,14 @@ import java.util.UUID
 class SyncCommand : CommandExecutor {
     private val plugin = EfficientSyncBukkit.instance
 
+    companion object {
+        private var maintainMode = false
+
+        fun isInMaintainMode(): Boolean {
+            return maintainMode
+        }
+    }
+
     override fun onCommand(sender: CommandSender, cmd: Command, label: String, params: Array<out String>): Boolean {
         if (!sender.hasPermission("esync.admin")) return false
         if (params.isEmpty()) {
@@ -35,6 +43,7 @@ class SyncCommand : CommandExecutor {
             "inv" -> this.view("inventory", sender, params)
             "ender" -> this.view("enderchest", sender, params)
             "autosave" -> this.autoSave(sender, params)
+            "saveandstop" -> this.saveAndStop(sender, params)
         }
         return false
     }
@@ -124,7 +133,7 @@ class SyncCommand : CommandExecutor {
                 sender.sendMessage("§c玩家 " + params[1] + " 不在线")
                 return
             }
-            
+
             if (AutoSaveHandler.isEnabled()) {
                 AutoSaveHandler.savePlayerData(targetPlayer)
                 sender.sendMessage("§a已保存玩家 " + targetPlayer.name + " 的数据")
@@ -133,6 +142,73 @@ class SyncCommand : CommandExecutor {
             }
         } else {
             sender.sendMessage("§c用法: /esync autosave [玩家名]")
+        }
+    }
+
+    private fun saveAndStop(sender: CommandSender, params: Array<out String>) {
+        if (params.size != 2) {
+            sender.sendMessage(I18n.getStrAndHeader("save-and-stop.usage"))
+            return
+        }
+
+        val seconds = try {
+            params[1].toInt()
+        } catch (e: NumberFormatException) {
+            sender.sendMessage(I18n.getStrAndHeader("save-and-stop.invalid-time"))
+            return
+        }
+
+        if (seconds <= 0) {
+            sender.sendMessage(I18n.getStrAndHeader("save-and-stop.invalid-time"))
+            return
+        }
+
+        // 禁止玩家进入服务器
+        maintainMode = true
+        Companion.maintainMode = true
+
+        // 踢出所有玩家
+        Bukkit.getOnlinePlayers().forEach { player ->
+            player.kickPlayer(I18n.getOption("save-and-stop.kick-reason"))
+        }
+
+        // 发送消息给命令执行者
+        sender.sendMessage(I18n.getStrAndHeader("save-and-stop.initiated").replace("%seconds%", seconds.toString()))
+
+        // 保存所有玩家数据
+        if (AutoSaveHandler.isEnabled()) {
+            Bukkit.getOnlinePlayers().forEach { player ->
+                AutoSaveHandler.savePlayerData(player)
+            }
+        }
+
+        // 设置定时关服任务
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            Bukkit.shutdown()
+        }, (seconds * 20L))
+
+        // 广播倒计时消息
+        if (seconds > 5) {
+            var remainingTime = seconds - 5
+            while (remainingTime > 0) {
+                val finalRemainingTime = remainingTime
+                Bukkit.getScheduler().runTaskLater(plugin, {
+                    Bukkit.broadcastMessage(
+                        I18n.getStrAndHeader("save-and-stop.countdown")
+                            .replace("%seconds%", finalRemainingTime.toString())
+                    )
+                }, ((seconds - finalRemainingTime) * 20L))
+                remainingTime -= 10
+            }
+        }
+
+        // 最后5秒每秒倒计时
+        for (i in 5 downTo 1) {
+            Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+                Bukkit.broadcastMessage(
+                    I18n.getStrAndHeader("save-and-stop.countdown").replace("%seconds%", i.toString())
+                )
+            }, ((seconds - i) * 20L))
         }
     }
 }
