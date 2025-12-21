@@ -42,6 +42,9 @@ subprojects {
 
     tasks.shadowJar {
         relocate("kotlin", "com.aiyostudio.esync.lib.kotlin")
+        relocate("org.apache.commons", "com.aiyostudio.esync.lib.apache.commons")
+        relocate("org.intellij.lang.annotations", "com.aiyostudio.esync.lib.intellij.annotations")
+        relocate("org.jetbrains.annotations", "com.aiyostudio.esync.lib.jetbrains.annotations")
     }
 }
 
