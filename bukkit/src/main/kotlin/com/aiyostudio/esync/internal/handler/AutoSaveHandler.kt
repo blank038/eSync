@@ -2,6 +2,7 @@ package com.aiyostudio.esync.internal.handler
 
 import com.aiyostudio.esync.common.enums.SyncState
 import com.aiyostudio.esync.internal.plugin.EfficientSyncBukkit
+import com.aiyostudio.esync.internal.util.LoggerUtil
 import org.bukkit.Bukkit
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
@@ -27,25 +28,22 @@ object AutoSaveHandler {
         config ?: return
 
         isEnabled = config.getBoolean("enable", false)
-        if (!isEnabled) return
+        if (!isEnabled) {
+            LoggerUtil.print("&6 * &fAuto save: &cDISABLED")
+            return
+        }
 
         delay = config.getLong("delay", 60L).coerceAtLeast(1L) // 至少1秒
         modulesToSave = config.getStringList("modules")
 
         if (modulesToSave.isEmpty()) {
-            EfficientSyncBukkit.instance.logger.warning("Auto-save is enabled but no modules specified. Disabling auto-save.")
+            LoggerUtil.print("&6 * &fAuto save: &cUNAVAILABLE")
             isEnabled = false
             return
         }
 
         start()
-        EfficientSyncBukkit.instance.logger.info(
-            "Auto-save enabled with delay: ${delay}s for modules: ${
-                modulesToSave.joinToString(
-                    ", "
-                )
-            }"
-        )
+        LoggerUtil.print("&6 * &fAuto save: &a(${delay}s) &e[${modulesToSave.joinToString(", ")}]")
     }
 
     /**
