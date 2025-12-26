@@ -22,6 +22,9 @@ sync:
   complete:
     title: "&a数据已同步完成"
     subtitle: "&f欢迎来到服务器"
+  location:
+    teleport-success: "已传送至上次保存的位置"
+    teleport-failed: "传送位置失败，世界不存在"
 kick-all:
   reason: "&e服务器维护."
   message: "已将全部玩家踢出服务器."

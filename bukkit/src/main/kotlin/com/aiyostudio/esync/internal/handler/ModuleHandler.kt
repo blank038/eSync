@@ -5,6 +5,7 @@ import com.aiyostudio.esync.common.module.IModule
 import com.aiyostudio.esync.internal.api.event.ModuleRegistryEvent
 import com.aiyostudio.esync.internal.module.impl.EnderChestModuleImpl
 import com.aiyostudio.esync.internal.module.impl.InventoryModuleImpl
+import com.aiyostudio.esync.internal.module.impl.LocationModuleImpl
 import com.aiyostudio.esync.internal.module.impl.PlayerStatusModuleImpl
 import com.aiyostudio.esync.internal.module.impl.StatisticsModuleImpl
 import com.aiyostudio.esync.internal.util.LoggerUtil
@@ -21,6 +22,7 @@ object ModuleHandler {
             "player-status" -> return PlayerStatusModuleImpl(option)
             "ender-chest" -> return EnderChestModuleImpl(option)
             "statistics" -> return StatisticsModuleImpl(option)
+            "location" -> return LocationModuleImpl(option)
         }
         return null
     }
@@ -47,5 +49,9 @@ object ModuleHandler {
 
     fun getAllModules(filter: List<String>? = null): List<String> {
         return if (filter == null) modules.keys.toList() else modules.keys.filter { !filter.contains(it) }.toList()
+    }
+
+    fun getDependModules(): List<String> {
+        return CacheHandler.dependModules.toList()
     }
 }

@@ -57,6 +57,7 @@ sync:
       - "player-status"
       - "ender-chest"
       - "statistics"
+      - "location"
     # 秒 / seconds
     delay: 60
 
@@ -89,6 +90,11 @@ modules:
   statistics:
     enable: true
     always-clear: true
+  # 玩家位置
+  # Player Location
+  location:
+    enable: true
+    always-clear: true
 
 # 至少加载了哪些模块才允许行动(移动, 执行命令)
 # At least which modules are loaded to allow actions (move, command)
@@ -97,6 +103,20 @@ depends:
   - "player-status"
   - "ender-chest"
   - "statistics"
+
+# 模块加载顺序配置
+# Module load order configuration
+# 第一阶段：依赖模块（depends）- 这些模块加载完成后玩家才能行动
+# 第二阶段：在依赖模块加载完成后立即加载的模块（如 location）
+# 第三阶段：最后加载的其他模块
+module-load-order:
+  # 在依赖模块加载完成后立即加载的模块
+  # Modules to load immediately after depend modules
+  after-depends:
+    - "location"
+  # 最后加载的其他模块（留空表示自动加载所有剩余模块）
+  # Other modules to load last (leave empty to load all remaining modules automatically)
+  last-loaded: []
 
 # 当 depends 要求模块加载完后启用哪些 hooks 逻辑
 hooks:
