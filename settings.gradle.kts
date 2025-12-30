@@ -3,8 +3,9 @@ pluginManagement {
         kotlin("jvm") version "2.0.20"
     }
     repositories {
+        maven { url = uri("https://repo.mc9y.com/snapshots") }
+        mavenCentral()
         gradlePluginPortal()
-        maven { url = uri("https://maven.minecraftforge.net/") }
     }
 }
 plugins {
@@ -12,6 +13,5 @@ plugins {
 }
 rootProject.name = "eSync"
 
-include("common", "bukkit", ":nms:v1_12_R1", ":nms:v1_16_R3")
+include("common", "bukkit", ":nms:v1_12_R1", ":nms:v1_16_R3", ":nms:v1_21_R1")
 include(":hooks:chemdah")
-include(":module:pixelmon-1_12_2", ":module:pixelmon-1_16_5")

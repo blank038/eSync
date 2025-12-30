@@ -1,8 +1,14 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     kotlin("jvm") version "2.0.20"
     id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+// 添加 ASM 依赖用于手动 relocate
+buildscript {
+    dependencies {
+        "classpath"("org.ow2.asm:asm:9.7")
+        "classpath"("org.ow2.asm:asm-commons:9.7")
+    }
 }
 
 version = "1.1.0-beta"
@@ -18,57 +24,28 @@ allprojects {
     }
 }
 
-subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "java-library")
-    apply(plugin = "com.github.johnrengelman.shadow")
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(8))
-        }
-    }
-
-    dependencies {
-        "implementation"("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
-    }
-
-    tasks.jar {
-        enabled = false
-    }
-
-    tasks.shadowJar {
-        relocate("kotlin", "com.aiyostudio.esync.lib.kotlin")
-        relocate("org.apache.commons", "com.aiyostudio.esync.lib.apache.commons")
-        relocate("org.intellij.lang.annotations", "com.aiyostudio.esync.lib.intellij.annotations")
-        relocate("org.jetbrains.annotations", "com.aiyostudio.esync.lib.jetbrains.annotations")
-    }
-}
-
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(21)
 }
 
 dependencies {
-    runtimeOnly(project(":common"))
-    runtimeOnly(project(":bukkit"))
-    runtimeOnly(project(":nms:v1_12_R1"))
-    runtimeOnly(project(":nms:v1_16_R3"))
-    runtimeOnly(project(":hooks:chemdah"))
+    implementation(project(":common"))
+    implementation(project(":bukkit"))
+    implementation(project(":nms:v1_12_R1"))
+    implementation(project(":nms:v1_16_R3"))
+    implementation(project(":nms:v1_21_R1"))
+    implementation(project(":hooks:chemdah"))
 }
 
-tasks.register<ShadowJar>("shadowJarAll") {
+tasks.shadowJar {
     archiveBaseName.set("eSync")
-    subprojects.forEach { subproject ->
-        if (subproject.name == "pixelmon-1_12_2" || subproject.name == "pixelmon-1_16_5") {
-            dependsOn(subproject.tasks.named("build"))
-        } else {
-            from(subproject.tasks.named("shadowJar").get().outputs.files) {
-                include("**/*")
-            }
-        }
-    }
+
+    exclude("com/google/gson/**", "org/checkerframework/**", "org/json/**", "org/slf4j/**")
+
+    relocate("kotlin", "com.aiyostudio.esync.lib.kotlin")
+    relocate("org.apache.commons", "com.aiyostudio.esync.lib.apache.commons")
+    relocate("org.intellij.lang.annotations", "com.aiyostudio.esync.lib.intellij.annotations")
+    relocate("org.jetbrains.annotations", "com.aiyostudio.esync.lib.jetbrains.annotations")
+    relocate("redis", "com.aiyostudio.esync.lib.redis")
+    relocate("org.postgresql", "com.aiyostudio.esync.lib.postgresql")
 }
