@@ -37,8 +37,13 @@ dependencies {
     implementation(project(":hooks:chemdah"))
 }
 
+tasks.jar {
+    enabled = false
+}
+
 tasks.shadowJar {
     archiveBaseName.set("eSync")
+    archiveClassifier.set("")
 
     exclude("com/google/gson/**", "org/checkerframework/**", "org/json/**", "org/slf4j/**")
 
