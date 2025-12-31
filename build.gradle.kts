@@ -3,7 +3,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-// 添加 ASM 依赖用于手动 relocate
 buildscript {
     dependencies {
         "classpath"("org.ow2.asm:asm:9.7")
@@ -15,6 +14,8 @@ version = "1.1.0-beta"
 extra["version"] = version
 
 allprojects {
+    apply(plugin = "java")
+
     repositories {
         maven {
             name = "AiYo Studio Repository"
@@ -22,10 +23,34 @@ allprojects {
         }
         mavenCentral()
     }
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
+        options.encoding = "UTF-8"
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+        }
+    }
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    sourceCompatibility = "21"
+    targetCompatibility = "21"
+    options.encoding = "UTF-8"
 }
 
 dependencies {
@@ -54,3 +79,5 @@ tasks.shadowJar {
     relocate("redis", "com.aiyostudio.esync.lib.redis")
     relocate("org.postgresql", "com.aiyostudio.esync.lib.postgresql")
 }
+
+tasks["build"].finalizedBy(tasks.shadowJar)
