@@ -25,6 +25,11 @@ class LocationEntity : IEntity {
                     val location = Location(world, x, y, z, yaw, pitch)
                     player.teleport(location)
                     
+                    // 输出传送日志
+                    EfficientSyncBukkit.instance.logger.info(
+                        "Player ${player.name} teleported to $worldName (${String.format("%.2f", x)}, ${String.format("%.2f", y)}, ${String.format("%.2f", z)})"
+                    )
+                    
                     // 发送传送成功消息
                     if (SyncConfig.isChatMessageEnabled()) {
                         player.sendMessage(I18n.getStrAndHeader("sync.location.teleport-success"))
