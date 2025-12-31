@@ -4,5 +4,6 @@ import com.aiyostudio.esync.api.SyncApi
 
 object EfficientSync {
     lateinit var api: SyncApi
-    val path = "com.aiyostudio.esync"
+    const val PATH = "com.aiyostudio.esync"
+    const val SERIALIZER_PATH = "com.aiyostudio.esync.internal.serializer"
 }

@@ -19,7 +19,7 @@ object SerializerUtil {
                 .split(",".toRegex())
                 .dropLastWhile { it.isEmpty() }
                 .toTypedArray()[3]
-            val classz = Class.forName("${EfficientSync.path}.internal.serializer.$version.DataSerializer")
+            val classz = Class.forName("${EfficientSync.SERIALIZER_PATH}.$version.DataSerializer")
             serializer = classz.newInstance() as IDataSerializer
             LoggerUtil.print("&6 * &fLoaded version: &e${version}")
             return true
