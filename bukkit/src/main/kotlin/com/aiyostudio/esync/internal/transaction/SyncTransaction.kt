@@ -34,9 +34,12 @@ class SyncTransaction(
                     val state = task.getState()
                     if (state == TransactionState.COMPLETE) {
                         completeList.add(k)
+                    } else {
+                        EfficientSyncBukkit.instance.logger.warning("Failed to sync module '$k' for player $uuid")
                     }
                     state
                 } else {
+                    EfficientSyncBukkit.instance.logger.warning("Player $uuid is offline, skipping sync module '$k'")
                     TransactionState.FAILED
                 }
             }.exceptionally {
@@ -48,9 +51,23 @@ class SyncTransaction(
             .thenApply { list.stream().allMatch { v -> v.isDone && v.get() == TransactionState.COMPLETE } }
             .thenAccept { allCompleted ->
                 Bukkit.getPlayer(uuid)?.takeIf { it.isOnline }?.let {
-                    val result = CacheHandler.playerCaches.containsKey(uuid) && allCompleted && !cancelled
-                    if (result) syncApply(it) else failed(uuid)
-                } ?: failed()
+                    val hasCache = CacheHandler.playerCaches.containsKey(uuid)
+                    val result = hasCache && allCompleted && !cancelled
+                    if (result) {
+                        syncApply(it)
+                    } else {
+                        if (!hasCache) {
+                            EfficientSyncBukkit.instance.logger.warning("Player cache not found for $uuid")
+                        }
+                        if (cancelled) {
+                            EfficientSyncBukkit.instance.logger.warning("Sync transaction cancelled for $uuid")
+                        }
+                        failed(uuid)
+                    }
+                } ?: run {
+                    EfficientSyncBukkit.instance.logger.warning("Player $uuid is offline when applying data")
+                    failed()
+                }
             }
     }
 
@@ -65,7 +82,11 @@ class SyncTransaction(
     }
 
     private fun apply(player: Player) {
-        val playerCache = CacheHandler.playerCaches[player.uniqueId] ?: return
+        val playerCache = CacheHandler.playerCaches[player.uniqueId] ?: run {
+            EfficientSyncBukkit.instance.logger.warning("Player cache not found when applying data for ${player.name}")
+            failed(uuid)
+            return
+        }
 
         try {
             // 批量处理所有模块，减少线程切换开销

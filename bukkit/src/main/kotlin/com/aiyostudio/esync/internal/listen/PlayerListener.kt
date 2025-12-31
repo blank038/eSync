@@ -166,6 +166,7 @@ class PlayerListener : Listener {
                             fadeOut
                         )
                     }
+                    plugin.logger.info { "${player.name} loaded [${CacheHandler.dependModules.joinToString(", ")}] successfully." }
                 },
                 {
                     if (SyncConfig.isChatMessageEnabled()) {
