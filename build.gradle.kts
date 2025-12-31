@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.20"
+    id("maven-publish")
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -10,8 +11,10 @@ buildscript {
     }
 }
 
-version = "1.1.0-beta"
-extra["version"] = version
+val artifactName = property("artifactName") as String
+val artifactGroup = property("artifactGroup") as String
+val artifactVersion = property("version") as String
+extra["version"] = artifactVersion
 
 allprojects {
     apply(plugin = "java")
@@ -67,8 +70,8 @@ tasks.jar {
 }
 
 tasks.shadowJar {
-    archiveBaseName.set("eSync")
-    archiveClassifier.set("")
+    archiveBaseName.set(artifactName)
+    archiveClassifier.set("shadow")
 
     exclude("com/google/gson/**", "org/checkerframework/**", "org/json/**", "org/slf4j/**")
 
@@ -80,4 +83,43 @@ tasks.shadowJar {
     relocate("org.postgresql", "com.aiyostudio.esync.lib.postgresql")
 }
 
-tasks["build"].finalizedBy(tasks.shadowJar)
+tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowThinJar") {
+    archiveBaseName.set(artifactName)
+    archiveClassifier.set("")
+
+    from(sourceSets.main.get().output)
+    from(project(":common").sourceSets.main.get().output)
+    from(project(":bukkit").sourceSets.main.get().output)
+    from(project(":nms:v1_12_R1").sourceSets.main.get().output)
+    from(project(":nms:v1_16_R3").sourceSets.main.get().output)
+    from(project(":nms:v1_21_R1").sourceSets.main.get().output)
+    from(project(":hooks:chemdah").sourceSets.main.get().output)
+
+    configurations = listOf()
+}
+
+tasks["build"].finalizedBy(tasks.shadowJar, tasks["shadowThinJar"])
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            groupId = artifactGroup
+            artifactId = artifactName
+            version = artifactVersion
+            artifact("$rootDir/build/libs/${artifactName}-${artifactVersion}.jar")
+        }
+    }
+    repositories {
+        maven {
+            name = "ayStudioRepository"
+            url = uri("https://repo.mc9y.com/snapshots")
+            credentials {
+                username = findProperty("ayStudioRepositoryUsername") as? String
+                password = findProperty("ayStudioRepositoryPassword") as? String
+            }
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+        }
+    }
+}
