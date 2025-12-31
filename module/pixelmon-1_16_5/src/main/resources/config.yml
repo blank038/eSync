@@ -1,7 +1,0 @@
-option:
-  # 是否开启模块
-  enable: true
-  # 是否每次同步都清理玩家数据
-  always-clear: true
-# 是否必须同步后才允许行为
-depend: true
