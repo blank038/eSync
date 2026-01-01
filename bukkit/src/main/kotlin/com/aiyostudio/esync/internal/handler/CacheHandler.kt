@@ -9,7 +9,7 @@ import java.util.UUID
 
 object CacheHandler {
     val playerCaches = mutableMapOf<UUID, PlayerCache>()
-    val dependModules = mutableListOf<String>()
+    val dependModules = mutableSetOf<String>()
 
     fun removeAndSaved(player: Player) {
         playerCaches.remove(player.uniqueId)?.getLoadedModules()?.forEach {

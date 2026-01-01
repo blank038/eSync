@@ -147,7 +147,7 @@ class PlayerListener : Listener {
             // 加载依赖模块
             SyncTransaction(
                 player.uniqueId,
-                CacheHandler.dependModules,
+                CacheHandler.dependModules.toList(),
                 {
                     if (SyncConfig.isChatMessageEnabled()) {
                         player.sendMessage(I18n.getStrAndHeader("sync.success"))

@@ -17,9 +17,12 @@ class EfficientSyncBukkit : AyPlugin() {
         lateinit var instance: EfficientSyncBukkit
     }
 
-    override fun onEnable() {
+    override fun onLoad() {
         instance = this
         EfficientSync.api = SyncApiBukkitImpl()
+    }
+
+    override fun onEnable() {
         // print header
         this.consoleLogger.setPrefix("&f[&eeSync&f] &8");
         LoggerUtil.printHeader()

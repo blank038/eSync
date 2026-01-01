@@ -52,6 +52,8 @@ object SyncConfig {
                 ModuleHandler.register(module)
             }
         }
+        ModuleHandler.callModuleFunctions()
+
         val event = InitModulesEvent()
         Bukkit.getPluginManager().callEvent(event)
     }

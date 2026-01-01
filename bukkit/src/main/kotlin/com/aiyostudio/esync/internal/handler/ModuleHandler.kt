@@ -14,6 +14,7 @@ import org.bukkit.configuration.ConfigurationSection
 
 object ModuleHandler {
     private val modules = mutableMapOf<String, IModule<IEntity>>()
+    private val moduleFunctions = mutableMapOf<String, () -> IModule<IEntity>>()
 
     fun createDefaultModule(key: String, option: ConfigurationSection): IModule<IEntity>? {
         if (!option.getBoolean("enable")) return null
@@ -47,11 +48,17 @@ object ModuleHandler {
         modules.clear()
     }
 
-    fun getAllModules(filter: List<String>? = null): List<String> {
+    fun getAllModules(filter: Set<String>? = null): List<String> {
         return if (filter == null) modules.keys.toList() else modules.keys.filter { !filter.contains(it) }.toList()
     }
 
-    fun getDependModules(): List<String> {
-        return CacheHandler.dependModules.toList()
+    fun registerModuleFunction(key: String, function: () -> IModule<IEntity>) {
+        moduleFunctions[key] = function
+    }
+
+    fun hasModuleFunction(key: String): Boolean = moduleFunctions.containsKey(key)
+
+    fun callModuleFunctions() {
+        moduleFunctions.forEach { (_, v) -> register(v()) }
     }
 }
