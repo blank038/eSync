@@ -5,6 +5,7 @@ import com.aiyostudio.esync.common.repository.IRepository
 import java.io.ByteArrayInputStream
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.SQLException
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -67,7 +68,7 @@ open class MysqlRepositoryImpl(
                     if (!rs.next()) {
                         return@rsUse
                     }
-                    rs.getBlob(1).getBinaryStream().use {
+                    rs.getBlob(1).binaryStream.use {
                         val bytes = ByteArray(it.available())
                         it.read(bytes)
                         result.set(bytes)
@@ -116,7 +117,7 @@ open class MysqlRepositoryImpl(
     override fun updateData(uuid: UUID, module: String, bytea: ByteArray): Boolean {
         if (!this.isExists(uuid, module)) return false
         val result = AtomicBoolean(false)
-        this.connectTransaction(uuid, module) { conn, id ->
+        val txSuccess = this.connectTransaction(uuid, module) { conn, id ->
             val sql = "UPDATE $esyncDataTable SET data = ? WHERE id = ?"
             conn.prepareStatement(sql).use { statement ->
                 statement.setBlob(1, ByteArrayInputStream(bytea))
@@ -124,13 +125,13 @@ open class MysqlRepositoryImpl(
                 result.set(statement.executeUpdate() > 0)
             }
         }
-        return result.get()
+        return txSuccess && result.get()
     }
 
     override fun updateState(uuid: UUID, module: String, state: SyncState): Boolean {
         if (!this.isExists(uuid, module)) return false
         val result = AtomicBoolean(false)
-        this.connectTransaction(uuid, module) { conn, id ->
+        val txSuccess = this.connectTransaction(uuid, module) { conn, id ->
             val sql = "UPDATE $esyncDataTable SET state = ? WHERE id = ?"
             conn.prepareStatement(sql).use { statement ->
                 statement.setString(1, state.name)
@@ -138,38 +139,75 @@ open class MysqlRepositoryImpl(
                 result.set(statement.executeUpdate() > 0)
             }
         }
-        return result.get()
+        return txSuccess && result.get()
     }
 
     override fun disable() {
     }
 
-    open fun connectTransaction(uuid: UUID, module: String, block: (connect: Connection, id: Int) -> Unit) {
-        with(this.getConnection()) {
-            this.use {
-                this.autoCommit = false
-                try {
-                    this.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-                    val lockQuery = "SELECT id FROM esync_data WHERE owner_uuid = ? AND module = ? FOR UPDATE;"
-                    var id = -1
-                    this.prepareStatement(lockQuery).use { statement ->
-                        statement.setString(1, uuid.toString())
-                        statement.setString(2, module)
-                        statement.executeQuery().use { rs ->
-                            if (rs.next()) {
-                                id = rs.getInt(1)
-                            }
-                        }
-                    }
-                    block(this, id)
-                    this.commit()
-                } catch (e: Exception) {
-                    this.rollback()
-                } finally {
-                    this.autoCommit = true
+    companion object {
+        private const val MAX_RETRY_COUNT = 3
+        private const val RETRY_DELAY_MS = 100L
+        private const val MYSQL_DEADLOCK_ERROR_CODE = 1213
+        private const val POSTGRES_DEADLOCK_SQLSTATE = "40P01"
+    }
+
+    open fun connectTransaction(uuid: UUID, module: String, block: (connect: Connection, id: Int) -> Unit): Boolean {
+        var retryCount = 0
+        while (retryCount < MAX_RETRY_COUNT) {
+            val result = executeTransaction(uuid, module, block)
+            if (result.first) {
+                return true
+            }
+            // 检查是否是死锁错误
+            if (result.second) {
+                retryCount++
+                if (retryCount < MAX_RETRY_COUNT) {
+                    Thread.sleep(RETRY_DELAY_MS * retryCount)
                 }
+            } else {
+                // 非死锁错误，直接返回失败
+                return false
             }
         }
+        return false
+    }
+
+    private fun executeTransaction(
+        uuid: UUID,
+        module: String,
+        block: (connect: Connection, id: Int) -> Unit
+    ): Pair<Boolean, Boolean> {
+        var success = false
+        var isDeadlock = false
+        this.getConnection().use { conn ->
+            conn.autoCommit = false
+            try {
+                conn.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+                val lockQuery = "SELECT id FROM esync_data WHERE owner_uuid = ? AND module = ? FOR UPDATE;"
+                val id = conn.prepareStatement(lockQuery).use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.setString(2, module)
+                    statement.executeQuery().use { rs -> if (rs.next()) rs.getInt(1) else -1 }
+                }
+                if (id != -1) {
+                    block(conn, id)
+                    conn.commit()
+                    success = true
+                }
+            } catch (e: Exception) {
+                if (e is SQLException) {
+                    isDeadlock = e.errorCode == MYSQL_DEADLOCK_ERROR_CODE ||
+                            e.sqlState == POSTGRES_DEADLOCK_SQLSTATE ||
+                            e.message?.contains("Deadlock", ignoreCase = true) == true
+                }
+                if (!isDeadlock) e.printStackTrace()
+            } finally {
+                if (!success) runCatching { conn.rollback() }.onFailure { it.printStackTrace() }
+                conn.autoCommit = true
+            }
+        }
+        return Pair(success, isDeadlock)
     }
 
     open fun connect(block: (connect: Connection) -> Unit) {
