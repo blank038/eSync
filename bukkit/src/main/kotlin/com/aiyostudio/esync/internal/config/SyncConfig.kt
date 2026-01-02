@@ -20,6 +20,9 @@ object SyncConfig {
     var autoUnlock: ConfigurationSection? = null
     var autoSave: ConfigurationSection? = null
     var loadingNotification: ConfigurationSection? = null
+    var debug: Boolean = false
+    val debugModules = mutableListOf<String>()
+    val debugUUIDs = mutableListOf<String>()
 
     fun init() {
         val plugin = EfficientSyncBukkit.instance
@@ -32,6 +35,11 @@ object SyncConfig {
         this.autoUnlock = config.getConfigurationSection("sync.auto-unlock")
         this.autoSave = config.getConfigurationSection("sync.auto-save")
         this.loadingNotification = config.getConfigurationSection("loading-notification")
+        this.debug = config.getBoolean("debug")
+        this.debugModules.clear()
+        this.debugModules.addAll(config.getStringList("debug-modules"))
+        this.debugUUIDs.clear()
+        this.debugUUIDs.addAll(config.getStringList("debug-uuids"))
         // initialize i18n
         I18n(config.getString("language"))
         // register modules

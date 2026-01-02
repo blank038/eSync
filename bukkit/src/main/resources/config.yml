@@ -135,3 +135,7 @@ loading-notification:
 
 # 调试 / Debug
 debug: false
+# 调试模块列表, 留空为全部
+debug-modules: [ ]
+# 调试 UUID 列表, 留空为全部
+debug-uuids: [ ]

@@ -35,7 +35,11 @@ class SyncTransaction(
                     if (state == TransactionState.COMPLETE) {
                         completeList.add(k)
                     } else {
-                        EfficientSyncBukkit.instance.logger.warning("Failed to sync module '$k' for player $uuid")
+                        val stage = task.getStage()
+                        val reason = task.getFailureReason() ?: "unknown"
+                        EfficientSyncBukkit.instance.logger.warning(
+                            "Failed to sync module '$k' for player $uuid | stage: ${stage.description} | reason: $reason"
+                        )
                     }
                     state
                 } else {
@@ -165,73 +169,184 @@ private class SyncTask(
     private val uuid: UUID,
     private val moduleId: String
 ) {
+    private val logger = EfficientSyncBukkit.instance.logger
+    private val debug = SyncConfig.debug
     private val module = ModuleHandler.findByKey(moduleId)
     private val repository = RepositoryHandler.repository
-    private var stage = SyncTaskStage.WAITING
+    private var stage = SyncTaskStage.INIT
     private var state: TransactionState = TransactionState.FAILED
+    private var failureReason: String? = null
+
+    private fun debug(message: String) {
+        if (!debug) {
+            return
+        }
+        if (!SyncConfig.debugModules.isEmpty() && !SyncConfig.debugModules.contains(moduleId)) {
+            return
+        }
+        if (!SyncConfig.debugUUIDs.isEmpty() && !SyncConfig.debugUUIDs.contains(uuid.toString())) {
+            return
+        }
+        logger.info("[eSync-Debug] [$moduleId] $message")
+    }
 
     private fun preload(): Boolean {
-        if (repository!!.isExists(uuid, module!!.uniqueKey)) {
-            module.preLoad(uuid)
-            return true
+        stage = SyncTaskStage.PRELOAD_CHECK_EXISTS
+        try {
+            debug("Checking if data exists for $uuid")
+            val exists = repository!!.isExists(uuid, module!!.uniqueKey)
+            debug("Data exists: $exists")
+            
+            if (exists) {
+                stage = SyncTaskStage.PRELOAD_LOAD_EXISTING
+                debug("Loading existing data via preLoad()")
+                module.preLoad(uuid)
+                debug("preLoad() completed successfully")
+                return true
+            }
+            
+            stage = SyncTaskStage.PRELOAD_FIRST_LOAD
+            debug("No existing data, performing firstLoad()")
+            val bytea = module.toByteArray(uuid)
+            debug("Generated initial data, size: ${bytea?.size ?: 0} bytes")
+            
+            if (module.firstLoad(uuid, bytea)) {
+                debug("firstLoad() succeeded")
+                state = TransactionState.COMPLETE
+                return true
+            }
+            failureReason = "firstLoad returned false (data initialization failed)"
+            debug("firstLoad() returned false")
+            return false
+        } catch (e: Exception) {
+            failureReason = "preload exception: ${e.message}"
+            logger.log(Level.WARNING, e) { "[SyncTask] Module '$moduleId' preload failed for $uuid" }
+            return false
         }
-        val bytea = module.toByteArray(uuid)
-        if (module.firstLoad(uuid, bytea)) {
-            state = TransactionState.COMPLETE
-            return true
-        }
-        return false
     }
 
     private fun attemptLoad(): Boolean {
         if (state == TransactionState.COMPLETE) return true
-        val autoUnlock = SyncConfig.autoUnlock?.getBoolean("enable", true) ?: true
-        val tick = 1.coerceAtLeast(if (autoUnlock) SyncConfig.autoUnlock?.getInt("delay", 20) ?: 20 else 1)
-        var syncState: SyncState? = null
-        for (i in 0 until tick) {
-            if (!PlayerUtil.isOnline(uuid)) {
-                break
+        stage = SyncTaskStage.ATTEMPT_LOAD_WAIT_STATE
+        try {
+            val autoUnlock = SyncConfig.autoUnlock?.getBoolean("enable", true) ?: true
+            val tick = 1.coerceAtLeast(if (autoUnlock) SyncConfig.autoUnlock?.getInt("delay", 20) ?: 20 else 1)
+            debug("Starting state wait loop (autoUnlock: $autoUnlock, maxWait: ${tick}s)")
+            
+            var syncState: SyncState? = null
+            for (i in 0 until tick) {
+                if (!PlayerUtil.isOnline(uuid)) {
+                    failureReason = "player went offline during attemptLoad (tick $i/$tick)"
+                    debug(failureReason!!)
+                    break
+                }
+                syncState = repository!!.queryState(uuid, module!!.uniqueKey)
+                debug("[${i + 1}/$tick] queryState() returned: $syncState")
+                
+                if (syncState == SyncState.COMPLETE) {
+                    debug("State is COMPLETE, proceeding to load data")
+                    break
+                }
+                if (!autoUnlock) {
+                    debug("autoUnlock disabled, not waiting further")
+                    break
+                }
+                if (i + 1 == tick) {
+                    stage = SyncTaskStage.ATTEMPT_LOAD_FORCE_UNLOCK
+                    debug("Max wait reached, attempting force unlock...")
+                    val unlockResult = repository.updateState(uuid, module.uniqueKey, SyncState.COMPLETE)
+                    debug("Force unlock result: $unlockResult")
+                    if (unlockResult) {
+                        syncState = SyncState.COMPLETE
+                        break
+                    }
+                }
+                Thread.sleep(1000L)
             }
-            syncState = repository!!.queryState(uuid, module!!.uniqueKey)
-            if (syncState == SyncState.COMPLETE || !autoUnlock) {
-                break
+            
+            if (syncState == SyncState.COMPLETE) {
+                stage = SyncTaskStage.ATTEMPT_LOAD_QUERY_DATA
+                debug("Querying data from repository...")
+                val bytea = repository!!.queryData(uuid, module!!.uniqueKey)
+                debug("Data retrieved, size: ${bytea?.size ?: 0} bytes")
+                
+                stage = SyncTaskStage.ATTEMPT_LOAD_DESERIALIZE
+                debug("Calling module.attemptLoad() to deserialize...")
+                if (!module.attemptLoad(uuid, bytea)) {
+                    failureReason = "attemptLoad returned false (data deserialization or loading failed, dataSize: ${bytea?.size ?: 0})"
+                    debug(failureReason!!)
+                    return false
+                }
+                debug("module.attemptLoad() succeeded")
+                
+                stage = SyncTaskStage.ATTEMPT_LOAD_UPDATE_STATE
+                debug("Updating state to WAITING...")
+                if (!repository.updateState(uuid, module.uniqueKey, SyncState.WAITING)) {
+                    failureReason = "failed to update state to WAITING after loading"
+                    debug(failureReason!!)
+                    return false
+                }
+                debug("State updated to WAITING successfully")
+                state = TransactionState.COMPLETE
+                return true
             }
-            if (i + 1 == tick && repository.updateState(uuid, module.uniqueKey, SyncState.COMPLETE)) {
-                syncState = SyncState.COMPLETE
-                break
-            }
-            Thread.sleep(1000L)
+            failureReason = "syncState not COMPLETE after waiting (state: $syncState, autoUnlock: $autoUnlock, waited: ${tick}s)"
+            debug(failureReason!!)
+            return false
+        } catch (e: Exception) {
+            failureReason = "attemptLoad exception: ${e.message}"
+            logger.log(Level.WARNING, e) { "[SyncTask] Module '$moduleId' attemptLoad failed for $uuid" }
+            return false
         }
-        if (syncState == SyncState.COMPLETE) {
-            val bytea = repository!!.queryData(uuid, module!!.uniqueKey)
-            if (!module.attemptLoad(uuid, bytea)) return false
-            if (!repository.updateState(uuid, module.uniqueKey, SyncState.WAITING)) return false
-            state = TransactionState.COMPLETE
-            return true
-        }
-        return false
     }
 
     fun execute(): SyncTask {
-        if (module == null || repository == null) {
+        debug("Starting sync task for $uuid")
+        if (module == null) {
+            failureReason = "module '$moduleId' not found"
+            debug(failureReason!!)
             this.state = TransactionState.FAILED
             return this
         }
-        if (this.stage == SyncTaskStage.WAITING && this.preload()) {
-            stage = SyncTaskStage.PRELOAD
+        if (repository == null) {
+            failureReason = "repository not initialized"
+            debug(failureReason!!)
+            this.state = TransactionState.FAILED
+            return this
         }
-        if (this.stage == SyncTaskStage.PRELOAD) {
+        if (this.stage == SyncTaskStage.INIT && this.preload()) {
+            stage = SyncTaskStage.PRELOAD_COMPLETE
+            debug("Preload stage completed")
+        }
+        if (this.stage == SyncTaskStage.PRELOAD_COMPLETE) {
             this.attemptLoad()
         }
+        debug("Sync task finished, state: $state, stage: $stage")
         return this
     }
 
     fun getState(): TransactionState {
         return this.state
     }
+
+    fun getFailureReason(): String? {
+        return failureReason
+    }
+
+    fun getStage(): SyncTaskStage {
+        return stage
+    }
 }
 
-private enum class SyncTaskStage {
-    WAITING,
-    PRELOAD
+private enum class SyncTaskStage(val description: String) {
+    INIT("initializing"),
+    PRELOAD_CHECK_EXISTS("checking if data exists"),
+    PRELOAD_LOAD_EXISTING("loading existing data"),
+    PRELOAD_FIRST_LOAD("performing first load"),
+    PRELOAD_COMPLETE("preload completed"),
+    ATTEMPT_LOAD_WAIT_STATE("waiting for state to be COMPLETE"),
+    ATTEMPT_LOAD_FORCE_UNLOCK("force unlocking"),
+    ATTEMPT_LOAD_QUERY_DATA("querying data from repository"),
+    ATTEMPT_LOAD_DESERIALIZE("deserializing data"),
+    ATTEMPT_LOAD_UPDATE_STATE("updating state to WAITING")
 }
