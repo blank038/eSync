@@ -33,7 +33,7 @@ class PlayerListener : Listener {
     fun onMove(event: PlayerMoveEvent) {
         val isMoveLocked = SyncConfig.behaviorLock?.getBoolean("move", true) ?: true
         val isPlayerNotLoaded = CacheHandler.playerCaches[event.player.uniqueId]?.dependLoaded == false
-        if (isMoveLocked && isPlayerNotLoaded) {
+        if (isMoveLocked && isPlayerNotLoaded && event.player.isOnGround) {
             event.isCancelled = true
             event.to = event.from
         }
