@@ -4,6 +4,7 @@ pluginManagement {
     }
     repositories {
         maven { url = uri("https://repo.mc9y.com/snapshots") }
+        maven("https://repo.papermc.io/repository/maven-public/")
         mavenCentral()
         gradlePluginPortal()
     }

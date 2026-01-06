@@ -73,6 +73,9 @@ tasks.shadowJar {
     archiveBaseName.set(artifactName)
     archiveClassifier.set("shadow")
 
+    // 等待 v1_21_R1 的 reobfJar 完成
+    dependsOn(":nms:v1_21_R1:reobfJar")
+
     exclude("com/google/gson/**", "org/checkerframework/**", "org/json/**", "org/slf4j/**")
 
     relocate("kotlin", "com.aiyostudio.esync.lib.kotlin")
@@ -81,19 +84,26 @@ tasks.shadowJar {
     relocate("org.jetbrains.annotations", "com.aiyostudio.esync.lib.jetbrains.annotations")
     relocate("redis", "com.aiyostudio.esync.lib.redis")
     relocate("org.postgresql", "com.aiyostudio.esync.lib.postgresql")
+
+    // v1_21_R1: 解压 reobfJar 输出的混淆后 jar
+    from(zipTree(file("nms/v1_21_R1/build/libs/v1_21_R1-1.2.0-beta.jar")))
 }
 
 tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowThinJar") {
     archiveBaseName.set(artifactName)
     archiveClassifier.set("")
 
+    dependsOn(":nms:v1_21_R1:reobfJar")
+
     from(sourceSets.main.get().output)
     from(project(":common").sourceSets.main.get().output)
     from(project(":bukkit").sourceSets.main.get().output)
     from(project(":nms:v1_12_R1").sourceSets.main.get().output)
     from(project(":nms:v1_16_R3").sourceSets.main.get().output)
-    from(project(":nms:v1_21_R1").sourceSets.main.get().output)
     from(project(":hooks:chemdah").sourceSets.main.get().output)
+
+    // v1_21_R1: 解压 reobfJar 输出的混淆后 jar
+    from(zipTree(file("nms/v1_21_R1/build/libs/v1_21_R1-1.2.0-beta.jar")))
 
     configurations = listOf()
 }

@@ -1,9 +1,19 @@
 plugins {
     kotlin("jvm")
+    id("io.papermc.paperweight.userdev") version "1.7.7"
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+repositories {
+    maven {
+        name = "AiYo Studio Repository"
+        url = uri("https://repo.mc9y.com/snapshots")
+    }
+    maven("https://repo.papermc.io/repository/maven-public/")
+    mavenCentral()
 }
 
 java {
@@ -28,9 +38,13 @@ tasks.jar {
     archiveBaseName.set("v1_21_R1")
 }
 
+tasks.assemble {
+    dependsOn("reobfJar")
+}
+
 dependencies {
     implementation(project(":bukkit"))
-    compileOnly("org.spigotmc:spigot:1.21.1-R0.1-SNAPSHOT")
-    compileOnly("org.bukkit:bukkit:1.21.1-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
 }

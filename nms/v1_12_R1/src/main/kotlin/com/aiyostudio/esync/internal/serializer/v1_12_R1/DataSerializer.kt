@@ -1,6 +1,6 @@
 package com.aiyostudio.esync.internal.serializer.v1_12_R1
 
-import com.aiyostudio.esync.internal.serializer.IDataSerializer
+import com.aiyostudio.esync.internal.serializer.GeneralDataSerializerImpl
 import io.netty.buffer.Unpooled
 import net.minecraft.server.v1_12_R1.PacketDataSerializer
 import net.minecraft.server.v1_12_R1.ServerStatisticManager
@@ -13,19 +13,16 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.util.concurrent.ConcurrentHashMap
 
-class DataSerializer : IDataSerializer {
-
-    override fun serializerItem(itemStack: ItemStack): ByteArray {
-        val buf = Unpooled.buffer()
-        val packet = PacketDataSerializer(buf)
-        packet.a(CraftItemStack.asNMSCopy(itemStack))
-        return packet.array()
-    }
+class DataSerializer : GeneralDataSerializerImpl() {
 
     override fun deserializerItem(byteArray: ByteArray): ItemStack {
-        val buf = Unpooled.wrappedBuffer(byteArray)
-        val packet = PacketDataSerializer(buf)
-        return CraftItemStack.asBukkitCopy(packet.k())
+        try {
+            return super.deserializerItem(byteArray)
+        } catch (_: Exception) {
+            val buf = Unpooled.wrappedBuffer(byteArray)
+            val packet = PacketDataSerializer(buf)
+            return CraftItemStack.asBukkitCopy(packet.k())
+        }
     }
 
     override fun serializerStatistics(player: Player): String? {
