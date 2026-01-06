@@ -86,7 +86,7 @@ tasks.shadowJar {
     relocate("org.postgresql", "com.aiyostudio.esync.lib.postgresql")
 
     // v1_21_R1: 解压 reobfJar 输出的混淆后 jar
-    from(zipTree(file("nms/v1_21_R1/build/libs/v1_21_R1-1.2.0-beta.jar")))
+    from(zipTree(file("nms/v1_21_R1/build/libs/v1_21_R1-$artifactVersion.jar")))
 }
 
 tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowThinJar") {
@@ -103,7 +103,7 @@ tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shad
     from(project(":hooks:chemdah").sourceSets.main.get().output)
 
     // v1_21_R1: 解压 reobfJar 输出的混淆后 jar
-    from(zipTree(file("nms/v1_21_R1/build/libs/v1_21_R1-1.2.0-beta.jar")))
+    from(zipTree(file("nms/v1_21_R1/build/libs/v1_21_R1-$artifactVersion.jar")))
 
     configurations = listOf()
 }
