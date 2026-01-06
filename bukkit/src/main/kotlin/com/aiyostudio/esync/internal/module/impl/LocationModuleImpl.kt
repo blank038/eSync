@@ -40,30 +40,38 @@ class LocationModuleImpl(
         return player?.let {
             val location = it.location
             val buf = Unpooled.buffer()
-            val worldNameBytes = location.world?.name?.toByteArray(StandardCharsets.UTF_8) ?: byteArrayOf()
-            buf.writeInt(worldNameBytes.size)
-            buf.writeBytes(worldNameBytes)
-            buf.writeDouble(location.x)
-            buf.writeDouble(location.y)
-            buf.writeDouble(location.z)
-            buf.writeFloat(location.yaw)
-            buf.writeFloat(location.pitch)
-            buf.array()
+            try {
+                val worldNameBytes = location.world?.name?.toByteArray(StandardCharsets.UTF_8) ?: byteArrayOf()
+                buf.writeInt(worldNameBytes.size)
+                buf.writeBytes(worldNameBytes)
+                buf.writeDouble(location.x)
+                buf.writeDouble(location.y)
+                buf.writeDouble(location.z)
+                buf.writeFloat(location.yaw)
+                buf.writeFloat(location.pitch)
+                buf.array()
+            } finally {
+                buf.release()
+            }
         }
     }
 
     override fun wrapper(bytea: ByteArray): LocationEntity {
         val result = LocationEntity()
         val buf = Unpooled.wrappedBuffer(bytea)
-        val worldNameLength = buf.readInt()
-        val worldNameBytes = ByteArray(worldNameLength)
-        buf.readBytes(worldNameBytes)
-        result.worldName = String(worldNameBytes, StandardCharsets.UTF_8)
-        result.x = buf.readDouble()
-        result.y = buf.readDouble()
-        result.z = buf.readDouble()
-        result.yaw = buf.readFloat()
-        result.pitch = buf.readFloat()
-        return result
+        try {
+            val worldNameLength = buf.readInt()
+            val worldNameBytes = ByteArray(worldNameLength)
+            buf.readBytes(worldNameBytes)
+            result.worldName = String(worldNameBytes, StandardCharsets.UTF_8)
+            result.x = buf.readDouble()
+            result.y = buf.readDouble()
+            result.z = buf.readDouble()
+            result.yaw = buf.readFloat()
+            result.pitch = buf.readFloat()
+            return result
+        } finally {
+            buf.release()
+        }
     }
 }

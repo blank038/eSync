@@ -46,38 +46,46 @@ class PlayerStatusModuleImpl(
         val player = Bukkit.getPlayer(uuid)
         return player?.let {
             val buf = Unpooled.buffer()
-            buf.writeDouble(it.health)
-            buf.writeDouble(it.getAttribute(Attribute.GENERIC_MAX_HEALTH).baseValue)
-            val collection = listOf(*it.activePotionEffects.toTypedArray())
-            buf.writeInt(collection.size)
-            collection.forEach { potion ->
-                val section = YamlConfiguration()
-                section.set("potion", potion)
-                val str = section.saveToString()
-                val bytea = str.toByteArray(Charsets.UTF_8)
-                buf.writeInt(bytea.size)
-                buf.writeBytes(bytea)
+            try {
+                buf.writeDouble(it.health)
+                buf.writeDouble(it.getAttribute(Attribute.GENERIC_MAX_HEALTH).baseValue)
+                val collection = listOf(*it.activePotionEffects.toTypedArray())
+                buf.writeInt(collection.size)
+                collection.forEach { potion ->
+                    val section = YamlConfiguration()
+                    section.set("potion", potion)
+                    val str = section.saveToString()
+                    val bytea = str.toByteArray(Charsets.UTF_8)
+                    buf.writeInt(bytea.size)
+                    buf.writeBytes(bytea)
+                }
+                buf.array()
+            } finally {
+                buf.release()
             }
-            buf.array()
         }
     }
 
     override fun wrapper(bytea: ByteArray): PlayerStatusEntity {
         val result = PlayerStatusEntity()
         val buf = Unpooled.wrappedBuffer(bytea)
-        result.health = buf.readDouble()
-        result.maxHealth = buf.readDouble()
-        val size = buf.readInt()
-        for (i in 0 until size) {
-            val length = buf.readInt()
-            val byteArray = ByteArray(length)
-            buf.readBytes(byteArray)
-            val str = String(byteArray, Charsets.UTF_8)
-            val yaml = YamlConfiguration()
-            yaml.loadFromString(str)
-            val potion = yaml.get("potion") as PotionEffect
-            result.potions.add(potion)
+        try {
+            result.health = buf.readDouble()
+            result.maxHealth = buf.readDouble()
+            val size = buf.readInt()
+            for (i in 0 until size) {
+                val length = buf.readInt()
+                val byteArray = ByteArray(length)
+                buf.readBytes(byteArray)
+                val str = String(byteArray, Charsets.UTF_8)
+                val yaml = YamlConfiguration()
+                yaml.loadFromString(str)
+                val potion = yaml.get("potion") as PotionEffect
+                result.potions.add(potion)
+            }
+            return result
+        } finally {
+            buf.release()
         }
-        return result
     }
 }

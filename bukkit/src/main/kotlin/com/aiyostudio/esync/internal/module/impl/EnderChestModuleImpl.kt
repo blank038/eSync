@@ -54,22 +54,30 @@ class EnderChestModuleImpl(
                 buf.writeInt(bytea.size)
                 buf.writeBytes(bytea)
             }
-            return buf.array()
+            try {
+                return buf.array()
+            } finally {
+                buf.release()
+            }
         }
     }
 
     override fun wrapper(bytea: ByteArray): EnderChestEntity {
-        val entity = EnderChestEntity()
         val byteBuf = Unpooled.wrappedBuffer(bytea)
-        val count = byteBuf.readInt()
-        for (i in 0 until count) {
-            val slot = byteBuf.readInt()
-            val length = byteBuf.readInt()
-            val bytes = ByteArray(length)
-            byteBuf.readBytes(bytes)
-            val item = SerializerUtil.deserializerItem(bytes)
-            entity.items[slot] = item
+        try {
+            val entity = EnderChestEntity()
+            val count = byteBuf.readInt()
+            for (i in 0 until count) {
+                val slot = byteBuf.readInt()
+                val length = byteBuf.readInt()
+                val bytes = ByteArray(length)
+                byteBuf.readBytes(bytes)
+                val item = SerializerUtil.deserializerItem(bytes)
+                entity.items[slot] = item
+            }
+            return entity
+        } finally {
+            byteBuf.release()
         }
-        return entity
     }
 }

@@ -5,7 +5,6 @@ import com.aiyostudio.esync.internal.module.entity.PlayerInventoryEntity
 import com.aiyostudio.esync.internal.util.SerializerUtil
 import io.netty.buffer.Unpooled
 import org.bukkit.Bukkit
-import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
 import java.util.*
 
@@ -52,33 +51,41 @@ class InventoryModuleImpl(
         val player = Bukkit.getPlayer(uuid)
         return player?.let {
             val array = 0.until(player.inventory.size)
-                .filter { slot -> (player.inventory.getItem(slot)?.type ?: Material.AIR) != Material.AIR }
+                .filter { slot -> player.inventory.getItem(slot) != null }
                 .map { slot -> Pair(slot, player.inventory.getItem(slot)) }
                 .toTypedArray()
             val buf = Unpooled.buffer()
-            buf.writeInt(array.size)
-            array.forEach { pair ->
-                buf.writeInt(pair.first)
-                val bytea = SerializerUtil.serializerItem(pair.second)
-                buf.writeInt(bytea.size)
-                buf.writeBytes(bytea)
+            try {
+                buf.writeInt(array.size)
+                array.forEach { pair ->
+                    buf.writeInt(pair.first)
+                    val bytea = SerializerUtil.serializerItem(pair.second)
+                    buf.writeInt(bytea.size)
+                    buf.writeBytes(bytea)
+                }
+                buf.array()
+            } finally {
+                buf.release()
             }
-            return buf.array()
         }
     }
 
     override fun wrapper(bytea: ByteArray): PlayerInventoryEntity {
         val entity = PlayerInventoryEntity()
         val byteBuf = Unpooled.wrappedBuffer(bytea)
-        val count = byteBuf.readInt()
-        for (i in 0 until count) {
-            val slot = byteBuf.readInt()
-            val length = byteBuf.readInt()
-            val bytes = ByteArray(length)
-            byteBuf.readBytes(bytes)
-            val item = SerializerUtil.deserializerItem(bytes)
-            entity.inventory[slot] = item
+        try {
+            val count = byteBuf.readInt()
+            for (i in 0 until count) {
+                val slot = byteBuf.readInt()
+                val length = byteBuf.readInt()
+                val bytes = ByteArray(length)
+                byteBuf.readBytes(bytes)
+                val item = SerializerUtil.deserializerItem(bytes)
+                entity.inventory[slot] = item
+            }
+            return entity
+        } finally {
+            byteBuf.release()
         }
-        return entity
     }
 }

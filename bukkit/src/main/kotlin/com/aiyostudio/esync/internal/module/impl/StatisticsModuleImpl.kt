@@ -44,26 +44,34 @@ class StatisticsModuleImpl(
 
     override fun toByteArray(uuid: UUID): ByteArray? {
         val player = Bukkit.getPlayer(uuid)
-        return player?.let {
-            val buf = Unpooled.buffer()
-            SerializerUtil.serializerStatistics(player)?.let {
-                val bytea = it.toByteArray(Charsets.UTF_8)
-                buf.writeInt(bytea.size)
-                buf.writeBytes(bytea)
-            } ?: let {
-                buf.writeInt(0)
+        val buf = Unpooled.buffer()
+        try {
+            return player?.let {
+                SerializerUtil.serializerStatistics(player)?.let {
+                    val bytea = it.toByteArray(Charsets.UTF_8)
+                    buf.writeInt(bytea.size)
+                    buf.writeBytes(bytea)
+                } ?: let {
+                    buf.writeInt(0)
+                }
+                buf.array()
             }
-            buf.array()
+        } finally {
+            buf.release()
         }
     }
 
     override fun wrapper(bytea: ByteArray): StatisticsEntity {
         val result = StatisticsEntity()
         val buf = Unpooled.wrappedBuffer(bytea)
-        val size = buf.readInt()
-        val array = ByteArray(size)
-        buf.readBytes(array)
-        result.data = String(array, Charsets.UTF_8)
-        return result
+        try {
+            val size = buf.readInt()
+            val array = ByteArray(size)
+            buf.readBytes(array)
+            result.data = String(array, Charsets.UTF_8)
+            return result
+        } finally {
+            buf.release()
+        }
     }
 }
