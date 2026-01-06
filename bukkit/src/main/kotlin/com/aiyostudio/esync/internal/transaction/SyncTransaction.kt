@@ -279,6 +279,32 @@ private class SyncTask(
                 }
                 debug("module.attemptLoad() succeeded")
                 
+                // 检测模块 isReady 状态，最多轮询5次，每次间隔1秒
+                stage = SyncTaskStage.ATTEMPT_LOAD_CHECK_READY
+                debug("Checking module isReady() status...")
+                var isReadyResult = false
+                for (readyCheck in 1..5) {
+                    if (!PlayerUtil.isOnline(uuid)) {
+                        failureReason = "player went offline during isReady check (attempt $readyCheck/5)"
+                        debug(failureReason!!)
+                        return false
+                    }
+                    isReadyResult = module.isReady(uuid)
+                    debug("[$readyCheck/5] isReady() returned: $isReadyResult")
+                    if (isReadyResult) {
+                        debug("Module is ready")
+                        break
+                    }
+                    if (readyCheck < 5) {
+                        Thread.sleep(1000L)
+                    }
+                }
+                if (!isReadyResult) {
+                    failureReason = "module isReady() returned false after 5 attempts"
+                    debug(failureReason!!)
+                    return false
+                }
+                
                 stage = SyncTaskStage.ATTEMPT_LOAD_UPDATE_STATE
                 debug("Updating state to WAITING...")
                 if (!repository.updateState(uuid, module.uniqueKey, SyncState.WAITING)) {
@@ -348,5 +374,6 @@ private enum class SyncTaskStage(val description: String) {
     ATTEMPT_LOAD_FORCE_UNLOCK("force unlocking"),
     ATTEMPT_LOAD_QUERY_DATA("querying data from repository"),
     ATTEMPT_LOAD_DESERIALIZE("deserializing data"),
+    ATTEMPT_LOAD_CHECK_READY("checking module isReady status"),
     ATTEMPT_LOAD_UPDATE_STATE("updating state to WAITING")
 }

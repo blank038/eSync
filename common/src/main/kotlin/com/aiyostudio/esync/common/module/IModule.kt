@@ -7,6 +7,8 @@ interface IModule<out T : IEntity> {
 
     fun init()
 
+    fun isReady(uuid: UUID): Boolean
+
     /**
      * Execute before attemptLoad.
      */

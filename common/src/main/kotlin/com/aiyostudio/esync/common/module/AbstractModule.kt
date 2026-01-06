@@ -20,4 +20,8 @@ abstract class AbstractModule<T : IEntity> : IModule<T> {
     override fun unload() {
         caches.clear()
     }
+
+    override fun isReady(uuid: UUID): Boolean {
+        return true
+    }
 }
