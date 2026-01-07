@@ -95,6 +95,8 @@ modules:
   location:
     enable: true
     always-clear: true
+    # 延迟传送, 单位: 秒
+    delay: 3
 
 # 至少加载了哪些模块才允许行动(移动, 执行命令)
 # At least which modules are loaded to allow actions (move, command)
