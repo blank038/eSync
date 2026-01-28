@@ -46,3 +46,4 @@ hooks/**/libs/
 .augment/
 .qoder/
 .crush/
+AGENTS.md
