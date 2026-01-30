@@ -19,9 +19,16 @@ class LocationEntity : IEntity {
     var pitch: Float = 0f
 
     override fun apply(player: Any): Boolean {
+        if (player !is Player) {
+            return false
+        }
         try {
-            if (player !is Player) {
-                return false
+            // 如果世界名为空（首次加载），直接返回成功，不执行传送
+            if (worldName.isEmpty()) {
+                EfficientSyncBukkit.instance.logger.info(
+                    "No saved location for player ${player.name}, skipping teleport"
+                )
+                return true
             }
             val world = Bukkit.getWorld(worldName) ?: let {
                 EfficientSyncBukkit.instance.logger.warning(
@@ -32,7 +39,8 @@ class LocationEntity : IEntity {
                 if (SyncConfig.isChatMessageEnabled()) {
                     player.sendMessage(I18n.getStrAndHeader("sync.location.teleport-failed"))
                 }
-                return false
+                // 返回 true 以确保模块被标记为已加载，这样新位置才能被保存
+                return true
             }
             // 延迟传送玩家
             Bukkit.getScheduler().runTaskLater(EfficientSyncBukkit.instance, {
@@ -49,17 +57,14 @@ class LocationEntity : IEntity {
             if (SyncConfig.isChatMessageEnabled()) {
                 player.sendMessage(I18n.getStrAndHeader("sync.location.teleport-success"))
             }
-            return true
         } catch (e: Exception) {
             EfficientSyncBukkit.instance.logger.log(Level.WARNING, e) {
-                "Failed to apply 'location' data for ${(player as Player).uniqueId}"
+                "Failed to apply 'location' data for ${player.uniqueId}"
             }
-            
-            // 发送传送失败消息
-            if (player is Player && SyncConfig.isChatMessageEnabled()) {
+            if (SyncConfig.isChatMessageEnabled()) {
                 player.sendMessage(I18n.getStrAndHeader("sync.location.teleport-failed"))
             }
         }
-        return false
+        return true
     }
 }
